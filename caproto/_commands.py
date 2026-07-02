@@ -31,7 +31,7 @@ import _ctypes
 
 from . import _dbr as dbr
 from ._backend import backend
-from ._constants import DO_REPLY, MAX_RECORD_LENGTH, NO_REPLY
+from ._constants import DO_REPLY, NO_REPLY
 from ._dbr import (DBR_INT, DBR_TYPES, MAX_STRING_SIZE, AccessRights,
                    ChannelType, float_t, native_type, short_t, special_types,
                    ushort_t)
@@ -58,7 +58,7 @@ from ._status import eca_value_to_status, ensure_eca_value
 from ._utils import (CLIENT, NEED_DATA, REQUEST, RESPONSE, SERVER,
                      CaprotoNotImplementedError, CaprotoTypeError,
                      CaprotoValueError, RemoteProtocolError, ValidationError,
-                     ensure_bytes)
+                     name_to_bytes, padded_len, padded_string_payload)
 
 __all__ = ('AccessRightsResponse', 'ClearChannelRequest',
            'ClearChannelResponse', 'ClientNameRequest',
@@ -127,11 +127,6 @@ def from_buffer(data_type, data_count, buffer):
     return md_payload, data_payload
 
 
-def padded_len(s):
-    "Length of a (byte)string rounded up to the nearest multiple of 8."
-    return 8 * ((len(s) + 7) // 8)
-
-
 def pad_buffers(*buffers):
     '''Get a bytestring for padding a concatenated set of buffers
 
@@ -146,12 +141,6 @@ def pad_buffers(*buffers):
     unpadded_size = sum(bytelen(buf) for buf in buffers)
     pad_buffer = _pad_buffer[unpadded_size % 8]
     return unpadded_size + len(pad_buffer), pad_buffer
-
-
-def padded_string_payload(payload):
-    byte_payload = ensure_bytes(payload)
-    padded_size = padded_len(byte_payload)
-    return padded_size, byte_payload.ljust(padded_size, b'\x00')
 
 
 def bytelen(item):
@@ -612,14 +601,15 @@ class SearchRequest(Message):
     HAS_PAYLOAD = True
 
     def __init__(self, name, cid, version, reply=NO_REPLY):
-        size, payload = padded_string_payload(name)
-        rec, _, field = name.partition('.')
-        _len = len(rec)
-        if _len > MAX_RECORD_LENGTH:
-            raise CaprotoValueError('EPICS 3.14 imposes a {}-character limit '
-                                    'on record names. The record {!r} is {} '
-                                    'characters.'
-                                    ''.format(MAX_RECORD_LENGTH, name, _len))
+        if isinstance(name, bytes):
+            payload = name
+        else:
+            payload = name_to_bytes(name)
+        size = len(payload)
+        if len(payload) % 8:
+            raise CaprotoValueError(
+                "Bytes for channel name must be aligned to 8 bytes boundary."
+            )
         header = SearchRequestHeader(size, reply, version, cid)
         super().__init__(header, b'', payload)
 

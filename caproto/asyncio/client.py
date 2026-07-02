@@ -23,7 +23,8 @@ import caproto as ca
 
 from .. import _constants as constants
 from .._utils import (ThreadsafeCounter, batch_requests,
-                      get_environment_variables, safe_getsockname)
+                      get_environment_variables, max_name_len_for_socket,
+                      name_to_bytes, safe_getsockname)
 from ..client import common
 from ..client.search_results import (DuplicateSearchResponse, SearchResults,
                                      UnknownSearchResponse)
@@ -506,8 +507,10 @@ class SharedBroadcaster:
         t = time.monotonic()
 
         def _construct_search_requests(items):
+            max_name_len = max_name_len_for_socket(self.udp_sock)
             for search_id, it in items:
-                yield ca.SearchRequest(it.name, search_id,
+                name_as_bytes = name_to_bytes(it.name, max_name_len)
+                yield ca.SearchRequest(name_as_bytes, search_id,
                                        ca.DEFAULT_PROTOCOL_VERSION)
                 it.last_sent = t
 

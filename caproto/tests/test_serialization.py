@@ -316,7 +316,7 @@ def test_bytelen():
 
 def test_overlong_strings():
     with pytest.raises(ca.CaprotoValueError):
-        ca.SearchRequest(name='a' * (ca.MAX_RECORD_LENGTH + 1), cid=0,
+        ca.SearchRequest(name='a' * 1000, cid=0,
                          version=ca.DEFAULT_PROTOCOL_VERSION)
 
 

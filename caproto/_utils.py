@@ -26,6 +26,7 @@ from contextlib import contextmanager
 from typing import Iterable
 from warnings import warn
 
+from ._constants import CA_HEADER_SIZE, MAX_UDP_SEND
 from ._dbr import SubscriptionType
 from ._version import get_versions
 
@@ -64,6 +65,10 @@ __all__ = (  # noqa F822
     'ensure_bytes',
     'random_ports',
     'bcast_socket',
+    'max_name_len_for_socket',
+    'name_to_bytes',
+    'padded_len',
+    'padded_string_payload',
     'parse_record_field',
     'parse_channel_filter',
     'batch_requests',
@@ -616,6 +621,19 @@ def bcast_socket(socket_module=socket):
 
     sock.setsockopt(socket_module.SOL_SOCKET, socket_module.SO_BROADCAST, 1)
 
+    # We try to ensure that the send buffer size is at least 1024 bytes. The CA
+    # client in EPICS Base does the same.
+    try:
+        send_buffer_size = sock.getsockopt(
+            socket_module.SOL_SOCKET, socket_module.SO_SNDBUF
+        )
+        if send_buffer_size < MAX_UDP_SEND:
+            sock.setsockopt(
+                socket_module.SOL_SOCKET, socket_module.SO_SNDBUF, MAX_UDP_SEND
+            )
+    except (AttributeError, OSError):
+        pass
+
     # for BSD/Darwin only
     try:
         socket_module.SO_REUSEPORT
@@ -624,6 +642,75 @@ def bcast_socket(socket_module=socket):
     else:
         sock.setsockopt(socket_module.SOL_SOCKET, socket_module.SO_REUSEPORT, 1)
     return sock
+
+
+def max_name_len_for_socket(sock, socket_module=socket):
+    """
+    Calculate the maximum name of a CA channel name for the specified socket.
+    This length includes the mandatory terminating null byte.
+
+    Parameters
+    ----------
+    sock: socket
+        Socket for which the length shall be determined.
+    socket_module: module, optional
+        Default is the built-in :mod:`socket` module, but anything with the
+        same interface may be used, such as :mod:`curio.socket`.
+    """
+    try:
+        send_buffer_size = sock.getsockopt(
+            socket_module.SOL_SOCKET, socket_module.SO_SNDBUF
+        )
+    except (AttributeError, OSError):
+        # If we cannot determine the actual size of the send buffer, we assume
+        # a size of 1024 bytes. The CA client in EPICS Base does the same.
+        send_buffer_size = MAX_UDP_SEND
+    # EPICS Base (3.14 up to at least 7.0.6) limit packets to 1024 bytes when
+    # sending search requests, so we do not allow names that would exceed this
+    # length either.
+    send_buffer_size = min(send_buffer_size, MAX_UDP_SEND)
+    # We have to reserve 24 bytes for the CA header.
+    return send_buffer_size - CA_HEADER_SIZE
+
+
+def name_to_bytes(name, max_name_len=None):
+    """
+    Conver a channel name to the (padded) bytes representation.
+
+    Parameters
+    ----------
+    name: str
+        channel name that shall be converted
+    max_name_len: int | None
+        Maximum length of bytes representation (including the terminating) null
+        byte. If this limit is exceeded, a CaprotoValueError is raised. The
+        default is MAX_UDP_SEND - CA_HEADER_SIZE.
+    """
+    if max_name_len is None:
+        max_name_len = MAX_UDP_SEND - CA_HEADER_SIZE
+    size, payload = padded_string_payload(name)
+    if size > max_name_len:
+        raise CaprotoValueError(
+            'The name of a channel name is limited {} bytes (including '
+            'the terminating null byte), but the serialzed form of the '
+            'name {!r} has {} bytes.'.format(max_name_len, name, size)
+        )
+    return payload
+
+
+def padded_len(s):
+    "Length of a (byte)string rounded up to the nearest multiple of 8."
+    return 8 * ((len(s) + 7) // 8)
+
+
+def padded_string_payload(payload):
+    """
+    Convert a string to bytes, padding as necessary in order to make the
+    returned bytes object aligned to an 8-bytes boundary.
+    """
+    byte_payload = ensure_bytes(payload)
+    padded_size = padded_len(byte_payload)
+    return padded_size, byte_payload.ljust(padded_size, b'\x00')
 
 
 if 'pypy' in sys.implementation.name:

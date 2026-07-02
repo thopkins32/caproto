@@ -13,12 +13,13 @@ try:
 except AttributeError:
     EPICS_EPOCH = datetime.datetime.utcfromtimestamp(EPICS2UNIX_EPOCH)
 
+CA_HEADER_SIZE = 24  # Size of the Channel Access header.
 MAX_STRING_SIZE = 40
 MAX_UNITS_SIZE = 8
 MAX_ENUM_STRING_SIZE = 26
 MAX_ENUM_STATES = 16
-MAX_RECORD_LENGTH = 59  # from 3.14 on
 MAX_UDP_RECV = 0xFFFF - 16
+MAX_UDP_SEND = 1024  # Maximum size for a single search request.
 
 # Max of ethernet and 802.{2,3} MTU 1500 - 20(IP header) - 8(UDP header)
 SEARCH_MAX_DATAGRAM_BYTES = 1472

@@ -34,7 +34,8 @@ from .._utils import (CaprotoError, CaprotoKeyError, CaprotoNetworkError,
                       CaprotoRuntimeError, CaprotoTimeoutError,
                       CaprotoTypeError, CaprotoValueError, ThreadsafeCounter,
                       adapt_old_callback_signature, batch_requests,
-                      safe_getsockname, socket_bytes_available)
+                      max_name_len_for_socket, name_to_bytes, safe_getsockname,
+                      socket_bytes_available)
 from ..client import common
 
 ch_logger = logging.getLogger('caproto.ch')
@@ -853,8 +854,10 @@ class SharedBroadcaster:
 
             # filter to just things that need to go out
             def _construct_search_requests(items):
+                max_name_len = max_name_len_for_socket(self.udp_sock)
                 for search_id, it in items:
-                    yield ca.SearchRequest(it[0], search_id,
+                    name_as_bytes = name_to_bytes(it[0], max_name_len)
+                    yield ca.SearchRequest(name_as_bytes, search_id,
                                            ca.DEFAULT_PROTOCOL_VERSION)
                     # reset the last time this was sent
                     it[-2] = t

@@ -17,7 +17,7 @@ import caproto as ca
 from .._dbr import ChannelType, SubscriptionType, field_types, native_type
 from .._utils import (CaprotoError, CaprotoTimeoutError, ErrorResponseReceived,
                       adapt_old_callback_signature, get_environment_variables,
-                      safe_getsockname)
+                      max_name_len_for_socket, name_to_bytes, safe_getsockname)
 from ..client import common
 from .repeater import spawn_repeater
 
@@ -73,9 +73,13 @@ def search(pv_name, udp_sock, timeout, *, max_retries=2):
 
     logger.debug("Searching for %r....", pv_name)
     search_cid = random.randint(0, 65535)
+    max_name_len = max_name_len_for_socket(udp_sock)
+    pv_name_bytes = name_to_bytes(pv_name, max_name_len)
     commands = (
         ca.VersionRequest(0, ca.DEFAULT_PROTOCOL_VERSION),
-        ca.SearchRequest(pv_name, search_cid, ca.DEFAULT_PROTOCOL_VERSION),
+        ca.SearchRequest(
+            pv_name_bytes, search_cid, ca.DEFAULT_PROTOCOL_VERSION
+        ),
     )
     bytes_to_send = b.send(*commands)
     tags = {'role': 'CLIENT',
