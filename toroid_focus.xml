@@ -38,7 +38,7 @@
 		<properties type="prop">
 			<azimuth type="param">0.0</azimuth>
 			<height type="param">0.0</height>
-			<alignE type="param">auto</alignE>
+			<alignE type="param">10000</alignE>
 			<fileName type="param">None</fileName>
 			<name type="param">myTestBeamline</name>
 			<description type="param">None</description>
@@ -138,7 +138,7 @@
 			<properties type="prop">
 				<bl type="param">myTestBeamline</bl>
 				<name type="param">screen01</name>
-				<center type="param">[0, 30000, 'auto']</center>
+				<center type="param">[0.0, 30000.0, 1763.2578888451785]</center>
 				<x type="param">[1.0, -0.0, 0.0]</x>
 				<z type="param">[0.0, 0.0, 1.0]</z>
 				<compressX type="param">None</compressX>

@@ -14,6 +14,7 @@ from __future__ import annotations
 import ast
 import asyncio
 import inspect
+import logging
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -27,6 +28,8 @@ import numpy as np
 from caproto import ChannelType
 from caproto.server import PVSpec, run, template_arg_parser
 
+
+logger = logging.getLogger("caproto.ctx.xrt_xml_ioc")
 
 DEFAULT_IMAGE_MAX_LENGTH = 1024 * 1024
 DEFAULT_FLOAT_PRECISION = 6
@@ -130,9 +133,6 @@ class ScreenCapture:
         self,
         screen: "ScreenState",
         *,
-        source_xml: str,
-        pv_prefix: str,
-        beamline_name: str,
         overwrite: bool,
     ) -> None:
         try:
@@ -146,25 +146,23 @@ class ScreenCapture:
         self.h5_path = screen.target_h5_path()
         self.h5_path.parent.mkdir(parents=True, exist_ok=True)
         self.h5_file = h5py.File(self.h5_path, "w" if overwrite else "x")
-        self.h5_file.attrs["source_xml"] = source_xml
-        self.h5_file.attrs["pv_prefix"] = pv_prefix
-        self.h5_file.attrs["xrt_beamline_name"] = beamline_name
-        self.h5_file.attrs["created"] = time.time()
 
         height, width = screen.image_shape()
-        group = self.h5_file.require_group(f"/entry/screens/{screen.safe_name}")
-        group.attrs["screen_name"] = screen.name
-        group.attrs["source_xml"] = source_xml
-        group.attrs["pv_prefix"] = pv_prefix
-        group.attrs["timestamp"] = time.time()
-        group.attrs["xrt_beamline_name"] = beamline_name
+        group = self.h5_file.require_group("/entry/data")
         self.dataset = group.create_dataset(
-            "image",
+            "data",
             shape=(0, height, width),
             maxshape=(None, height, width),
             chunks=(1, height, width),
             dtype="float64",
             compression="lzf",
+        )
+        logger.info(
+            "Opened HDF5 capture for %s at %s with frame shape (%d, %d)",
+            screen.name,
+            self.h5_path,
+            height,
+            width,
         )
 
     def append(self, screen_name: str, frame: np.ndarray) -> None:
@@ -180,9 +178,18 @@ class ScreenCapture:
         self.dataset.resize((index + 1, *frame.shape))
         self.dataset[index, :, :] = frame
         self.h5_file.flush()
+        logger.debug(
+            "Appended frame %d for %s to %s; frame sum=%g max=%g",
+            index,
+            screen_name,
+            self.h5_path,
+            float(np.sum(frame)),
+            float(np.max(frame)) if frame.size else 0.0,
+        )
 
     def close(self) -> None:
         if self.h5_file is not None:
+            logger.info("Closed HDF5 capture file %s", self.h5_path)
             self.h5_file.close()
         self.h5_path = None
         self.h5_file = None
@@ -193,6 +200,7 @@ class ScreenCapture:
 class ScreenState:
     name: str
     safe_name: str
+    pv_suffix_base: str
     obj: Any
     capture: ScreenCapture = field(default_factory=ScreenCapture)
     acquire_pv: Any = None
@@ -201,6 +209,7 @@ class ScreenState:
     file_path_pv: Any = None
     file_name_pv: Any = None
     num_images_pv: Any = None
+    frames_written_pv: Any = None
     image_pv: Any = None
 
     def target_h5_path(self) -> Path:
@@ -427,6 +436,7 @@ class SimulationCoordinator:
         self.capture_lock = asyncio.Lock()
 
     async def request(self, screen_name: str) -> None:
+        logger.info("Queued acquisition request for %s", self.screens[screen_name].name)
         await self.screens[screen_name].status_pv.write("Acquiring")
         await self.queue.put(screen_name)
         if self.worker_task is None or self.worker_task.done():
@@ -437,6 +447,9 @@ class SimulationCoordinator:
         try:
             async with self.capture_lock:
                 if enabled:
+                    was_open = screen.capture.is_open
+                    if was_open:
+                        logger.info("Capture already open for %s at %s", screen.name, screen.capture.h5_path)
                     target = screen.target_h5_path()
                     for other in self.screens.values():
                         if other is screen:
@@ -450,17 +463,17 @@ class SimulationCoordinator:
                         None,
                         lambda: screen.capture.open(
                             screen,
-                            source_xml=str(self.xml_path),
-                            pv_prefix=self.prefix,
-                            beamline_name=str(getattr(self.beamline, "name", "")),
                             overwrite=self.overwrite,
                         ),
                     )
+                    if not was_open:
+                        await screen.frames_written_pv.write(0)
                 else:
                     await loop.run_in_executor(None, screen.capture.close)
+                    await screen.frames_written_pv.write(0)
         except Exception as exc:
             await screen.status_pv.write("Error")
-            print(f"{screen.name}: {exc}")
+            logger.exception("Failed to set Capture=%s for %s", enabled, screen.name)
             return False
 
         if not enabled and screen.status_pv.value != "Error":
@@ -491,6 +504,10 @@ class SimulationCoordinator:
                     requested.add(self.queue.get_nowait())
                 except asyncio.QueueEmpty:
                     break
+            logger.info(
+                "Starting acquisition batch for screens: %s",
+                ", ".join(self.screens[name].name for name in sorted(requested)),
+            )
             await self._run_batch(requested)
 
     async def _run_batch(self, requested: set[str]) -> None:
@@ -503,9 +520,14 @@ class SimulationCoordinator:
             name: max(1, int(_coerce_put_value(self.screens[name].num_images_pv.value)))
             for name in requested
         }
+        logger.info(
+            "Batch frame counts: %s",
+            ", ".join(f"{self.screens[name].name}={num_images[name]}" for name in sorted(requested)),
+        )
         loop = asyncio.get_running_loop()
         try:
             for image_index in range(max(num_images.values())):
+                logger.debug("Running XRT frame index %d", image_index)
                 images = await loop.run_in_executor(None, self._run_xrt_once)
                 await self._update_previews(images)
 
@@ -520,29 +542,38 @@ class SimulationCoordinator:
                     for name in write_names:
                         await self.screens[name].status_pv.write("Writing")
                     async with self.capture_lock:
-                        await loop.run_in_executor(
+                        frames_written = await loop.run_in_executor(
                             None,
                             lambda names=write_names, frames=images: self._append_captures(names, frames),
                         )
+                    for name, count in frames_written.items():
+                        await self.screens[name].frames_written_pv.write(count)
+                        logger.info("%s FramesWritten=%d", self.screens[name].name, count)
                     for name in write_names:
                         await self.screens[name].status_pv.write("Acquiring")
         except Exception as exc:
             for name in requested:
                 await self.screens[name].status_pv.write("Error")
-            print(f"XRT acquisition failed: {exc}")
+            logger.exception("XRT acquisition batch failed")
             return
 
         for name in requested:
             await self.screens[name].status_pv.write("Idle")
+        logger.info("Completed acquisition batch")
 
-    def _append_captures(self, names: list[str], images: dict[str, np.ndarray]) -> None:
+    def _append_captures(self, names: list[str], images: dict[str, np.ndarray]) -> dict[str, int]:
+        frames_written = {}
         for name in names:
             screen = self.screens[name]
             screen.capture.append(screen.name, images[name])
+            frames_written[name] = int(screen.capture.dataset.shape[0])
+        return frames_written
 
     def _run_xrt_once(self) -> dict[str, np.ndarray]:
         self._force_histograms()
+        start = time.monotonic()
         self.raycing.run_process_from_file(self.beamline)
+        elapsed = time.monotonic() - start
         images: dict[str, np.ndarray] = {}
         for name, screen in self.screens.items():
             image = getattr(screen.obj, "image", None)
@@ -551,6 +582,15 @@ class SimulationCoordinator:
             arr = np.asarray(image, dtype=np.float64)
             if arr.ndim == 2 and arr.size:
                 images[name] = arr.copy()
+                logger.debug(
+                    "Screen %s image shape=%s sum=%g max=%g nonzero=%d",
+                    screen.name,
+                    arr.shape,
+                    float(np.sum(arr)),
+                    float(np.max(arr)),
+                    int(np.count_nonzero(arr)),
+                )
+        logger.info("XRT run completed in %.3f s with %d screen image(s)", elapsed, len(images))
         return images
 
     def _force_histograms(self) -> None:
@@ -574,6 +614,7 @@ class SimulationCoordinator:
             flat = np.asarray(frame, dtype=np.float64).ravel()
             if flat.size > self.image_max_length:
                 flat = flat[: self.image_max_length]
+                logger.debug("Truncated preview image for %s to %d elements", self.screens[name].name, self.image_max_length)
             await self.screens[name].image_pv.write(flat, verify_value=False)
 
 
@@ -614,6 +655,23 @@ class XrtXmlIOC:
         )
         self.coordinator._force_histograms()
         self.pvdb = self._build_pvdb()
+        live_count = sum(1 for item in self.mapping.values() if not item.read_only)
+        logger.info(
+            "Loaded XRT XML IOC from %s: beamline=%s, xml_pvs=%d, live_writable=%d, read_only=%d, screens=%d",
+            self.xml_path,
+            self.beamline_name,
+            len(self.mapping),
+            live_count,
+            len(self.mapping) - live_count,
+            len(self.screens),
+        )
+        for screen in self.screens.values():
+            logger.info(
+                "Screen %s controls exposed under %s%s:",
+                screen.name,
+                self.prefix,
+                screen.pv_suffix_base,
+            )
 
     def _element_uuid_map(self) -> dict[str, str]:
         result: dict[str, str] = {}
@@ -658,25 +716,41 @@ class XrtXmlIOC:
 
     def _screen_states(self) -> dict[str, ScreenState]:
         screens: dict[str, ScreenState] = {}
+        used_pv_suffixes: Counter[str] = Counter()
+        screen_xml_names = {uuid: name for name, uuid in self.element_uuids.items()}
         for screen in getattr(self.beamline, "screens", []):
             name = str(getattr(screen, "name", "") or getattr(screen, "uuid", "screen"))
             safe_name = _safe_component(name)
             if safe_name in screens:
                 safe_name = f"{safe_name}_{str(getattr(screen, 'uuid', ''))[:8]}"
-            screens[safe_name] = ScreenState(name=name, safe_name=safe_name, obj=screen)
+            xml_name = screen_xml_names.get(getattr(screen, "uuid", None))
+            if xml_name is None:
+                pv_suffix_base = safe_name
+            else:
+                pv_suffix_base = _suffix_from_parts((self.beamline_name, xml_name))
+            used_pv_suffixes[pv_suffix_base] += 1
+            if used_pv_suffixes[pv_suffix_base] > 1:
+                pv_suffix_base = f"{pv_suffix_base}_{used_pv_suffixes[pv_suffix_base]}"
+            screens[safe_name] = ScreenState(
+                name=name,
+                safe_name=safe_name,
+                pv_suffix_base=pv_suffix_base,
+                obj=screen,
+            )
         return screens
 
     def _build_pvdb(self) -> dict[str, Any]:
         specs = [*self._xml_pv_specs(), *self._screen_pv_specs()]
         pvdb = {spec.name: spec.create(group=None) for spec in specs}
         for screen in self.screens.values():
-            base = f"{self.prefix}{screen.safe_name}"
+            base = f"{self.prefix}{screen.pv_suffix_base}"
             screen.acquire_pv = pvdb[f"{base}:Acquire"]
             screen.status_pv = pvdb[f"{base}:AcquireStatus"]
             screen.capture_pv = pvdb[f"{base}:Capture"]
             screen.file_path_pv = pvdb[f"{base}:FilePath"]
             screen.file_name_pv = pvdb[f"{base}:FileName"]
             screen.num_images_pv = pvdb[f"{base}:NumImages"]
+            screen.frames_written_pv = pvdb[f"{base}:FramesWritten"]
             screen.image_pv = pvdb[f"{base}:Image"]
         return pvdb
 
@@ -821,7 +895,7 @@ class XrtXmlIOC:
     def _screen_pv_specs(self) -> list[PVSpec]:
         specs: list[PVSpec] = []
         for screen in self.screens.values():
-            base = screen.safe_name
+            base = screen.pv_suffix_base
 
             async def acquire_putter(instance, value, *, screen=screen):
                 if _bool_value(value):
@@ -894,6 +968,13 @@ class XrtXmlIOC:
                         dtype=int,
                         put=num_images_putter,
                         doc="Number of frames to acquire; minimum is 1",
+                    ),
+                    PVSpec(
+                        name=self.prefix + f"{base}:FramesWritten",
+                        value=0,
+                        dtype=int,
+                        read_only=True,
+                        doc="Frames appended to this screen's open HDF5 file",
                     ),
                     PVSpec(
                         name=self.prefix + f"{base}:Image",
@@ -992,8 +1073,8 @@ class XrtXmlIOC:
                 self._write_live_attr(xml_pv, value)
             elif xml_pv.live_kind == "flow":
                 self._write_live_flow(xml_pv, value)
-        except Exception as exc:
-            print(f"Could not update live XRT binding for {xml_pv.suffix}: {exc}")
+        except Exception:
+            logger.exception("Could not update live XRT binding for %s", xml_pv.suffix)
             raise
         readback = self._read_live_value(xml_pv)
         xml_pv.value = readback
