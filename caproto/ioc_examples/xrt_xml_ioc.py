@@ -29,6 +29,7 @@ from caproto.server import PVSpec, run, template_arg_parser
 
 
 DEFAULT_IMAGE_MAX_LENGTH = 1024 * 1024
+DEFAULT_FLOAT_PRECISION = 6
 STATUS_STRINGS = ["Idle", "Acquiring", "Writing", "Error"]
 BINARY_STRINGS = ["Off", "On"]
 STRING_KWARGS = dict(string_encoding="utf-8", report_as_string=True)
@@ -56,6 +57,23 @@ COMPOUND_FIELDS = {
     "opening": ["left", "right", "bottom", "top"],
     "blades": ["left", "right", "bottom", "top"],
 }
+DISCRETE_INTEGER_FIELDS = {
+    "bins",
+    "eN",
+    "ePos",
+    "histShape",
+    "nrays",
+    "nx",
+    "nz",
+    "pickleEvery",
+    "ppb",
+    "processes",
+    "repeats",
+    "threads",
+    "updateEvery",
+    "xPos",
+    "yPos",
+}
 INTEGER_RE = re.compile(r"^[+-]?\d+$")
 FLOAT_RE = re.compile(
     r"^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?$"
@@ -69,6 +87,7 @@ class XmlPV:
     element: ET.Element
     value: Any
     string_pv: bool
+    read_only: bool = True
     field_name: str | None = None
     field_index: int | None = None
     live_kind: str | None = None
@@ -704,24 +723,47 @@ class XrtXmlIOC:
                 field_index=field_index,
             )
             self._attach_live_target(xml_pv)
+            self._set_initial_live_value(xml_pv)
             self.mapping[suffix] = xml_pv
             specs.append(self._config_spec(xml_pv))
         return specs
 
-    def _config_spec(self, xml_pv: XmlPV) -> PVSpec:
-        async def putter(instance, value, *, xml_pv=xml_pv):
-            return self._write_config(xml_pv, value)
+    def _set_initial_live_value(self, xml_pv: XmlPV) -> None:
+        if xml_pv.live_kind is None:
+            return
+        try:
+            value = self._read_live_value(xml_pv)
+        except Exception:
+            xml_pv.live_kind = None
+            xml_pv.read_only = True
+            return
+        if isinstance(value, np.generic):
+            value = value.item()
+        xml_pv.value = value
+        xml_pv.string_pv = _string_pv_required(value)
+        xml_pv.read_only = False
 
-        value = _pv_value(xml_pv.value, xml_pv.string_pv)
+    def _config_spec(self, xml_pv: XmlPV) -> PVSpec:
+        async def getter(instance, *, xml_pv=xml_pv):
+            return self._pv_readback_value(xml_pv, self._read_live_value(xml_pv))
+
+        async def putter(instance, value, *, xml_pv=xml_pv):
+            return self._write_live_pv(xml_pv, value)
+
+        value = self._pv_readback_value(xml_pv, xml_pv.value)
+        get = getter if not xml_pv.read_only else None
+        put = putter if not xml_pv.read_only else None
         if xml_pv.string_pv:
             return PVSpec(
                 name=self.prefix + xml_pv.suffix,
                 value=value,
                 dtype=str,
-                put=putter,
+                get=get,
+                put=put,
+                read_only=xml_pv.read_only,
                 max_length=4096,
                 cls_kwargs=STRING_KWARGS,
-                doc=f"XML {xml_pv.xml_path}",
+                doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
             )
         if isinstance(value, bool):
             return PVSpec(
@@ -729,43 +771,52 @@ class XrtXmlIOC:
                 value=value,
                 dtype=bool,
                 record="bo",
-                put=putter,
-                doc=f"XML {xml_pv.xml_path}",
+                get=get,
+                put=put,
+                read_only=xml_pv.read_only,
+                doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
             )
-        if isinstance(value, int) and not isinstance(value, bool):
-            if self._integer_value_should_be_float(xml_pv):
-                return PVSpec(
-                    name=self.prefix + xml_pv.suffix,
-                    value=float(value),
-                    dtype=float,
-                    put=putter,
-                    doc=f"XML {xml_pv.xml_path}",
-                )
+        if self._should_use_integer_pv(xml_pv) and isinstance(value, (int, float)):
             return PVSpec(
                 name=self.prefix + xml_pv.suffix,
-                value=value,
+                value=int(value),
                 dtype=int,
-                put=putter,
-                doc=f"XML {xml_pv.xml_path}",
+                get=get,
+                put=put,
+                read_only=xml_pv.read_only,
+                doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
             )
         return PVSpec(
             name=self.prefix + xml_pv.suffix,
             value=float(value),
             dtype=float,
-            put=putter,
-            doc=f"XML {xml_pv.xml_path}",
+            get=get,
+            put=put,
+            read_only=xml_pv.read_only,
+            cls_kwargs={"precision": DEFAULT_FLOAT_PRECISION},
+            doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
         )
 
-    def _integer_value_should_be_float(self, xml_pv: XmlPV) -> bool:
-        if xml_pv.live_kind != "attr" or xml_pv.target is None or xml_pv.attr is None:
-            return False
-        try:
-            value = getattr(xml_pv.target, xml_pv.attr)
-            if xml_pv.field_index is not None:
-                value = value[xml_pv.field_index]
-        except Exception:
-            return False
-        return isinstance(value, (float, np.floating))
+    def _pv_readback_value(self, xml_pv: XmlPV, value: Any) -> Any:
+        if isinstance(value, np.generic):
+            value = value.item()
+        if xml_pv.string_pv:
+            return _format_text(value)
+        if self._should_use_integer_pv(xml_pv) and isinstance(value, (int, float)):
+            return int(value)
+        if isinstance(value, int) and not isinstance(value, bool):
+            return float(value)
+        return value
+
+    def _should_use_integer_pv(self, xml_pv: XmlPV) -> bool:
+        if xml_pv.live_kind is None:
+            return isinstance(xml_pv.value, int) and not isinstance(xml_pv.value, bool)
+        attr = xml_pv.attr or xml_pv.arg or xml_pv.path[-1]
+        if attr in DISCRETE_INTEGER_FIELDS:
+            return True
+        if xml_pv.field_name is not None and attr == "histShape":
+            return True
+        return False
 
     def _screen_pv_specs(self) -> list[PVSpec]:
         specs: list[PVSpec] = []
@@ -900,33 +951,42 @@ class XrtXmlIOC:
         xml_pv.target = target
         xml_pv.attr = attr
 
-    def _write_config(self, xml_pv: XmlPV, value: Any) -> Any:
+    def _read_live_value(self, xml_pv: XmlPV) -> Any:
+        if xml_pv.live_kind == "attr":
+            return self._read_live_attr(xml_pv)
+        if xml_pv.live_kind == "flow":
+            return self._read_live_flow(xml_pv)
+        return xml_pv.value
+
+    def _read_live_attr(self, xml_pv: XmlPV) -> Any:
+        if xml_pv.attr is None or xml_pv.target is None:
+            return xml_pv.value
+        value = getattr(xml_pv.target, xml_pv.attr)
+        if xml_pv.field_index is not None:
+            value = value[xml_pv.field_index]
+        if isinstance(value, np.generic):
+            return value.item()
+        return value
+
+    def _read_live_flow(self, xml_pv: XmlPV) -> Any:
+        methods = self.beamline.flowU.get(xml_pv.oeid, {})
+        kwargs = methods.get(xml_pv.method)
+        if kwargs is None or xml_pv.arg is None:
+            return xml_pv.value
+        value = kwargs.get(xml_pv.arg, xml_pv.value)
+        if xml_pv.arg == "beam":
+            for beam_name, beam_tag in self.beamline.beamNamesDict.items():
+                if beam_tag[0] == value:
+                    value = beam_name
+                    break
+        if xml_pv.field_index is not None:
+            value = value[xml_pv.field_index]
+        if isinstance(value, np.generic):
+            return value.item()
+        return value
+
+    def _write_live_pv(self, xml_pv: XmlPV, value: Any) -> Any:
         value = _coerce_put_value(value)
-        if xml_pv.field_index is None:
-            xml_pv.value = value
-            xml_pv.element.text = _format_text(value)
-            self._write_live(xml_pv, value)
-            return _pv_value(value, xml_pv.string_pv)
-
-        values = self._current_compound_values(xml_pv)
-        while len(values) <= xml_pv.field_index:
-            values.append(None)
-        values[xml_pv.field_index] = value
-        xml_pv.value = value
-        xml_pv.element.text = _format_text(values)
-        self._write_live(xml_pv, value)
-        return _pv_value(value, xml_pv.string_pv)
-
-    def _current_compound_values(self, xml_pv: XmlPV) -> list[Any]:
-        parsed = _parse_text(xml_pv.raw_text)
-        values = _compound_values(xml_pv.path[-1], xml_pv.raw_text, parsed)
-        if values is not None:
-            return values
-        if isinstance(parsed, (list, tuple)):
-            return list(parsed)
-        return []
-
-    def _write_live(self, xml_pv: XmlPV, value: Any) -> None:
         try:
             if xml_pv.live_kind == "attr":
                 self._write_live_attr(xml_pv, value)
@@ -934,6 +994,10 @@ class XrtXmlIOC:
                 self._write_live_flow(xml_pv, value)
         except Exception as exc:
             print(f"Could not update live XRT binding for {xml_pv.suffix}: {exc}")
+            raise
+        readback = self._read_live_value(xml_pv)
+        xml_pv.value = readback
+        return self._pv_readback_value(xml_pv, readback)
 
     def _write_live_attr(self, xml_pv: XmlPV, value: Any) -> None:
         attr = xml_pv.attr
@@ -953,7 +1017,7 @@ class XrtXmlIOC:
         try:
             values = list(current)
         except TypeError:
-            values = self._current_compound_values(xml_pv)
+            values = []
         while len(values) <= xml_pv.field_index:
             values.append(0)
         values[xml_pv.field_index] = self._xrt_value(value)
@@ -968,7 +1032,7 @@ class XrtXmlIOC:
             kwargs[xml_pv.arg] = self._flow_value(xml_pv.arg, value)
             return
 
-        values = list(kwargs.get(xml_pv.arg, self._current_compound_values(xml_pv)))
+        values = list(kwargs.get(xml_pv.arg, []))
         while len(values) <= xml_pv.field_index:
             values.append(None)
         values[xml_pv.field_index] = self._xrt_value(value)
