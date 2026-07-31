@@ -33,6 +33,8 @@ logger = logging.getLogger("caproto.ctx.xrt_xml_ioc")
 
 DEFAULT_IMAGE_MAX_LENGTH = 1024 * 1024
 DEFAULT_FLOAT_PRECISION = 6
+PATH_STRING_MAX_LENGTH = 4096
+FILENAME_STRING_MAX_LENGTH = 1024
 STATUS_STRINGS = ["Idle", "Acquiring", "Writing", "Error"]
 BINARY_STRINGS = ["Off", "On"]
 STRING_KWARGS = dict(string_encoding="utf-8", report_as_string=True)
@@ -78,9 +80,7 @@ DISCRETE_INTEGER_FIELDS = {
     "yPos",
 }
 INTEGER_RE = re.compile(r"^[+-]?\d+$")
-FLOAT_RE = re.compile(
-    r"^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?$"
-)
+FLOAT_RE = re.compile(r"^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?$")
 
 
 @dataclass
@@ -369,7 +369,9 @@ def _compound_values(tag: str, raw_text: str, parsed_value: Any) -> list[Any] | 
     elif isinstance(parsed_value, (list, tuple)):
         values = list(parsed_value)
     elif tag.startswith("lim") and "," in raw_text:
-        values = [_parse_text(part) for part in _split_top_level(raw_text.strip("[]() "))]
+        values = [
+            _parse_text(part) for part in _split_top_level(raw_text.strip("[]() "))
+        ]
     else:
         return None
 
@@ -449,7 +451,11 @@ class SimulationCoordinator:
                 if enabled:
                     was_open = screen.capture.is_open
                     if was_open:
-                        logger.info("Capture already open for %s at %s", screen.name, screen.capture.h5_path)
+                        logger.info(
+                            "Capture already open for %s at %s",
+                            screen.name,
+                            screen.capture.h5_path,
+                        )
                     target = screen.target_h5_path()
                     for other in self.screens.values():
                         if other is screen:
@@ -522,7 +528,10 @@ class SimulationCoordinator:
         }
         logger.info(
             "Batch frame counts: %s",
-            ", ".join(f"{self.screens[name].name}={num_images[name]}" for name in sorted(requested)),
+            ", ".join(
+                f"{self.screens[name].name}={num_images[name]}"
+                for name in sorted(requested)
+            ),
         )
         loop = asyncio.get_running_loop()
         try:
@@ -544,11 +553,15 @@ class SimulationCoordinator:
                     async with self.capture_lock:
                         frames_written = await loop.run_in_executor(
                             None,
-                            lambda names=write_names, frames=images: self._append_captures(names, frames),
+                            lambda names=write_names, frames=images: (
+                                self._append_captures(names, frames)
+                            ),
                         )
                     for name, count in frames_written.items():
                         await self.screens[name].frames_written_pv.write(count)
-                        logger.info("%s FramesWritten=%d", self.screens[name].name, count)
+                        logger.info(
+                            "%s FramesWritten=%d", self.screens[name].name, count
+                        )
                     for name in write_names:
                         await self.screens[name].status_pv.write("Acquiring")
         except Exception as exc:
@@ -561,7 +574,9 @@ class SimulationCoordinator:
             await self.screens[name].status_pv.write("Idle")
         logger.info("Completed acquisition batch")
 
-    def _append_captures(self, names: list[str], images: dict[str, np.ndarray]) -> dict[str, int]:
+    def _append_captures(
+        self, names: list[str], images: dict[str, np.ndarray]
+    ) -> dict[str, int]:
         frames_written = {}
         for name in names:
             screen = self.screens[name]
@@ -590,7 +605,9 @@ class SimulationCoordinator:
                     float(np.max(arr)),
                     int(np.count_nonzero(arr)),
                 )
-        logger.info("XRT run completed in %.3f s with %d screen image(s)", elapsed, len(images))
+        logger.info(
+            "XRT run completed in %.3f s with %d screen image(s)", elapsed, len(images)
+        )
         return images
 
     def _force_histograms(self) -> None:
@@ -614,7 +631,11 @@ class SimulationCoordinator:
             flat = np.asarray(frame, dtype=np.float64).ravel()
             if flat.size > self.image_max_length:
                 flat = flat[: self.image_max_length]
-                logger.debug("Truncated preview image for %s to %d elements", self.screens[name].name, self.image_max_length)
+                logger.debug(
+                    "Truncated preview image for %s to %d elements",
+                    self.screens[name].name,
+                    self.image_max_length,
+                )
             await self.screens[name].image_pv.write(flat, verify_value=False)
 
 
@@ -637,11 +658,17 @@ class XrtXmlIOC:
         self.beamline = self.raycing.BeamLine(fileName=str(self.xml_path))
         self.beamline_node = _find_beamline_node(self.root, self.beamline)
         self.beamline_name = (
-            self.beamline_node.tag if self.beamline_node is not None else self.beamline.name
+            self.beamline_node.tag
+            if self.beamline_node is not None
+            else self.beamline.name
         )
         self.element_uuids = self._element_uuid_map()
-        self.materials = self._named_object_map("Materials", "matnamesToUUIDs", "materialsDict")
-        self.figure_errors = self._named_object_map("FigureErrors", "fenamesToUUIDs", "fesDict")
+        self.materials = self._named_object_map(
+            "Materials", "matnamesToUUIDs", "materialsDict"
+        )
+        self.figure_errors = self._named_object_map(
+            "FigureErrors", "fenamesToUUIDs", "fesDict"
+        )
         self.mapping: dict[str, XmlPV] = {}
         self.screens = self._screen_states()
         self.coordinator = SimulationCoordinator(
@@ -693,7 +720,9 @@ class XrtXmlIOC:
                 result[child.tag] = uuid
         return result
 
-    def _named_object_map(self, section: str, names_attr: str, dict_attr: str) -> dict[str, Any]:
+    def _named_object_map(
+        self, section: str, names_attr: str, dict_attr: str
+    ) -> dict[str, Any]:
         result: dict[str, Any] = {}
         section_node = self.root.find(section)
         if section_node is None:
@@ -755,7 +784,9 @@ class XrtXmlIOC:
         return pvdb
 
     def _xml_pv_specs(self) -> list[PVSpec]:
-        entries: list[tuple[tuple[str, ...], ET.Element, str | None, int | None, Any]] = []
+        entries: list[
+            tuple[tuple[str, ...], ET.Element, str | None, int | None, Any]
+        ] = []
         for path, element in _iter_xml_param_paths(self.root):
             raw_text = "" if element.text is None else element.text.strip()
             parsed = _parse_text(raw_text)
@@ -763,7 +794,9 @@ class XrtXmlIOC:
             if values is None:
                 entries.append((path, element, None, None, parsed))
                 continue
-            for index, (field_name, value) in enumerate(zip(COMPOUND_FIELDS[path[-1]], values)):
+            for index, (field_name, value) in enumerate(
+                zip(COMPOUND_FIELDS[path[-1]], values)
+            ):
                 entries.append((path, element, field_name, index, value))
 
         dropped_suffixes = []
@@ -948,18 +981,14 @@ class XrtXmlIOC:
                         name=self.prefix + f"{base}:FilePath",
                         value=str(Path.cwd()),
                         dtype=str,
-                        record="stringout",
-                        max_length=4096,
-                        cls_kwargs=STRING_KWARGS,
+                        max_length=PATH_STRING_MAX_LENGTH,
                         doc="Directory used when Capture changes to 1",
                     ),
                     PVSpec(
                         name=self.prefix + f"{base}:FileName",
                         value=f"{base}.h5",
                         dtype=str,
-                        record="stringout",
-                        max_length=1024,
-                        cls_kwargs=STRING_KWARGS,
+                        max_length=FILENAME_STRING_MAX_LENGTH,
                         doc="Filename used when Capture changes to 1",
                     ),
                     PVSpec(
@@ -1138,7 +1167,9 @@ class XrtXmlIOC:
         return beam_tag[0] if beam_tag is not None else value
 
     def _named_value(self, attr: str, values: list[Any]) -> Any:
-        if attr.startswith("limPhys") and all(not isinstance(value, str) for value in values):
+        if attr.startswith("limPhys") and all(
+            not isinstance(value, str) for value in values
+        ):
             return self.raycing.Limits(values)
         if attr == "histShape":
             return self.raycing.Image2D([int(value) for value in values])
