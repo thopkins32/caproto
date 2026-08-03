@@ -5,8 +5,8 @@ Usage
 -----
 python -m caproto.ioc_examples.xrt_xml_ioc --xml beamline.xml --prefix XRT:
 
-The XML file defines the configurable PVs. The same file is loaded into XRT for
-in-memory simulation. The XML file on disk is never modified.
+The XML file defines the live configurable PVs. The same file is loaded into XRT
+for in-memory simulation. The XML file on disk is never modified.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import xml.etree.ElementTree as ET
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -84,39 +84,38 @@ FLOAT_RE = re.compile(r"^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?$"
 
 
 @dataclass
-class XmlPV:
-    suffix: str
+class XmlEntry:
     path: tuple[str, ...]
-    element: ET.Element
+    raw_text: str
     value: Any
-    string_pv: bool
-    read_only: bool = True
     field_name: str | None = None
     field_index: int | None = None
-    live_kind: str | None = None
-    target: Any = None
-    attr: str | None = None
-    oeid: str | None = None
-    method: str | None = None
-    arg: str | None = None
 
     @property
     def xml_path(self) -> str:
         return "/".join(self.path)
 
-    @property
-    def raw_text(self) -> str:
-        return "" if self.element.text is None else self.element.text.strip()
+
+@dataclass
+class LiveBinding:
+    read: Callable[[], Any]
+    write: Callable[[Any], None]
+    integer_hint: bool = False
+    internal: bool = False
+
+
+@dataclass
+class XmlPV:
+    suffix: str
+    path: tuple[str, ...]
+    raw_text: str
+    value: Any
+    string_pv: bool
+    binding: LiveBinding
 
     @property
-    def parsed_value(self) -> Any:
-        value = _parse_text(self.raw_text)
-        if self.field_index is None:
-            return value
-        try:
-            return value[self.field_index]
-        except Exception:
-            return self.value
+    def xml_path(self) -> str:
+        return "/".join(self.path)
 
 
 @dataclass
@@ -393,6 +392,52 @@ def _iter_xml_param_paths(root: ET.Element) -> list[tuple[tuple[str, ...], ET.El
     return params
 
 
+def _iter_xml_entries(root: ET.Element) -> list[XmlEntry]:
+    entries: list[XmlEntry] = []
+    for path, element in _iter_xml_param_paths(root):
+        raw_text = "" if element.text is None else element.text.strip()
+        parsed = _parse_text(raw_text)
+        values = _compound_values(path[-1], raw_text, parsed)
+        if values is None:
+            entries.append(XmlEntry(path=path, raw_text=raw_text, value=parsed))
+            continue
+        for index, (field_name, value) in enumerate(
+            zip(COMPOUND_FIELDS[path[-1]], values)
+        ):
+            entries.append(
+                XmlEntry(
+                    path=path,
+                    raw_text=raw_text,
+                    value=value,
+                    field_name=field_name,
+                    field_index=index,
+                )
+            )
+    return entries
+
+
+def _entry_suffix(entry: XmlEntry, *, drop_structural: bool) -> str:
+    parts = _path_parts(entry.path, drop_structural=drop_structural)
+    if entry.field_name is not None:
+        parts = (*parts, entry.field_name)
+    return _suffix_from_parts(parts)
+
+
+def _unique_suffixes(entries: list[XmlEntry]) -> list[str]:
+    dropped_suffixes = [_entry_suffix(entry, drop_structural=True) for entry in entries]
+    full_suffixes = [_entry_suffix(entry, drop_structural=False) for entry in entries]
+    counts = Counter(dropped_suffixes)
+    used: Counter[str] = Counter()
+    suffixes = []
+    for dropped, full in zip(dropped_suffixes, full_suffixes):
+        suffix = dropped if counts[dropped] == 1 else full
+        used[suffix] += 1
+        if used[suffix] > 1:
+            suffix = f"{suffix}_{used[suffix]}"
+        suffixes.append(suffix)
+    return suffixes
+
+
 def _child_text(parent: ET.Element | None, name: str) -> str | None:
     if parent is None:
         return None
@@ -421,16 +466,12 @@ class SimulationCoordinator:
         raycing: Any,
         beamline: Any,
         screens: dict[str, ScreenState],
-        xml_path: Path,
-        prefix: str,
         image_max_length: int,
         overwrite: bool,
     ):
         self.raycing = raycing
         self.beamline = beamline
         self.screens = screens
-        self.xml_path = xml_path
-        self.prefix = prefix
         self.image_max_length = int(image_max_length)
         self.overwrite = overwrite
         self.queue: asyncio.Queue[str] = asyncio.Queue()
@@ -585,7 +626,6 @@ class SimulationCoordinator:
         return frames_written
 
     def _run_xrt_once(self) -> dict[str, np.ndarray]:
-        self._force_histograms()
         start = time.monotonic()
         self.raycing.run_process_from_file(self.beamline)
         elapsed = time.monotonic() - start
@@ -610,7 +650,8 @@ class SimulationCoordinator:
         )
         return images
 
-    def _force_histograms(self) -> None:
+    def enable_screen_histograms(self) -> int:
+        enabled = 0
         for oeid, methods in getattr(self.beamline, "flowU", {}).items():
             try:
                 obj = self.beamline.oesDict[oeid][0]
@@ -625,6 +666,9 @@ class SimulationCoordinator:
                     continue
                 if "withHistogram" in parameters:
                     kwargs["withHistogram"] = True
+                    enabled += 1
+        logger.info("Enabled histogram output for %d screen expose flow(s)", enabled)
+        return enabled
 
     async def _update_previews(self, images: dict[str, np.ndarray]) -> None:
         for name, frame in images.items():
@@ -675,21 +719,16 @@ class XrtXmlIOC:
             raycing=self.raycing,
             beamline=self.beamline,
             screens=self.screens,
-            xml_path=self.xml_path,
-            prefix=self.prefix,
             image_max_length=self.image_max_length,
             overwrite=self.overwrite,
         )
-        self.coordinator._force_histograms()
+        self.coordinator.enable_screen_histograms()
         self.pvdb = self._build_pvdb()
-        live_count = sum(1 for item in self.mapping.values() if not item.read_only)
         logger.info(
-            "Loaded XRT XML IOC from %s: beamline=%s, xml_pvs=%d, live_writable=%d, read_only=%d, screens=%d",
+            "Loaded XRT XML IOC from %s: beamline=%s, live_config_pvs=%d, screens=%d",
             self.xml_path,
             self.beamline_name,
             len(self.mapping),
-            live_count,
-            len(self.mapping) - live_count,
             len(self.screens),
         )
         for screen in self.screens.values():
@@ -784,90 +823,55 @@ class XrtXmlIOC:
         return pvdb
 
     def _xml_pv_specs(self) -> list[PVSpec]:
-        entries: list[
-            tuple[tuple[str, ...], ET.Element, str | None, int | None, Any]
-        ] = []
-        for path, element in _iter_xml_param_paths(self.root):
-            raw_text = "" if element.text is None else element.text.strip()
-            parsed = _parse_text(raw_text)
-            values = _compound_values(path[-1], raw_text, parsed)
-            if values is None:
-                entries.append((path, element, None, None, parsed))
+        bound_entries: list[tuple[XmlEntry, LiveBinding]] = []
+        for entry in _iter_xml_entries(self.root):
+            binding = self._live_binding_for(entry)
+            if binding is None or binding.internal:
                 continue
-            for index, (field_name, value) in enumerate(
-                zip(COMPOUND_FIELDS[path[-1]], values)
-            ):
-                entries.append((path, element, field_name, index, value))
+            try:
+                value = binding.read()
+            except Exception:
+                logger.debug(
+                    "Skipping XML parameter without readable live binding: %s",
+                    entry.xml_path,
+                    exc_info=True,
+                )
+                continue
+            if isinstance(value, np.generic):
+                value = value.item()
+            entry.value = value
+            bound_entries.append((entry, binding))
 
-        dropped_suffixes = []
-        full_suffixes = []
-        for path, _element, field_name, _index, _value in entries:
-            dropped = _path_parts(path, drop_structural=True)
-            full = _path_parts(path, drop_structural=False)
-            if field_name is not None:
-                dropped = (*dropped, field_name)
-                full = (*full, field_name)
-            dropped_suffixes.append(_suffix_from_parts(dropped))
-            full_suffixes.append(_suffix_from_parts(full))
-
-        counts = Counter(dropped_suffixes)
-        used: Counter[str] = Counter()
+        suffixes = _unique_suffixes([entry for entry, _binding in bound_entries])
         specs = []
-        for entry, dropped, full in zip(entries, dropped_suffixes, full_suffixes):
-            path, element, field_name, field_index, value = entry
-            suffix = dropped if counts[dropped] == 1 else full
-            used[suffix] += 1
-            if used[suffix] > 1:
-                suffix = f"{suffix}_{used[suffix]}"
-
+        for suffix, (entry, binding) in zip(suffixes, bound_entries):
             xml_pv = XmlPV(
                 suffix=suffix,
-                path=path,
-                element=element,
-                value=value,
-                string_pv=_string_pv_required(value),
-                field_name=field_name,
-                field_index=field_index,
+                path=entry.path,
+                raw_text=entry.raw_text,
+                value=entry.value,
+                string_pv=_string_pv_required(entry.value),
+                binding=binding,
             )
-            self._attach_live_target(xml_pv)
-            self._set_initial_live_value(xml_pv)
             self.mapping[suffix] = xml_pv
             specs.append(self._config_spec(xml_pv))
         return specs
 
-    def _set_initial_live_value(self, xml_pv: XmlPV) -> None:
-        if xml_pv.live_kind is None:
-            return
-        try:
-            value = self._read_live_value(xml_pv)
-        except Exception:
-            xml_pv.live_kind = None
-            xml_pv.read_only = True
-            return
-        if isinstance(value, np.generic):
-            value = value.item()
-        xml_pv.value = value
-        xml_pv.string_pv = _string_pv_required(value)
-        xml_pv.read_only = False
-
     def _config_spec(self, xml_pv: XmlPV) -> PVSpec:
         async def getter(instance, *, xml_pv=xml_pv):
-            return self._pv_readback_value(xml_pv, self._read_live_value(xml_pv))
+            return self._pv_readback_value(xml_pv, xml_pv.binding.read())
 
         async def putter(instance, value, *, xml_pv=xml_pv):
             return self._write_live_pv(xml_pv, value)
 
         value = self._pv_readback_value(xml_pv, xml_pv.value)
-        get = getter if not xml_pv.read_only else None
-        put = putter if not xml_pv.read_only else None
         if xml_pv.string_pv:
             return PVSpec(
                 name=self.prefix + xml_pv.suffix,
                 value=value,
                 dtype=str,
-                get=get,
-                put=put,
-                read_only=xml_pv.read_only,
+                get=getter,
+                put=putter,
                 max_length=4096,
                 cls_kwargs=STRING_KWARGS,
                 doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
@@ -878,9 +882,8 @@ class XrtXmlIOC:
                 value=value,
                 dtype=bool,
                 record="bo",
-                get=get,
-                put=put,
-                read_only=xml_pv.read_only,
+                get=getter,
+                put=putter,
                 doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
             )
         if self._should_use_integer_pv(xml_pv) and isinstance(value, (int, float)):
@@ -888,18 +891,16 @@ class XrtXmlIOC:
                 name=self.prefix + xml_pv.suffix,
                 value=int(value),
                 dtype=int,
-                get=get,
-                put=put,
-                read_only=xml_pv.read_only,
+                get=getter,
+                put=putter,
                 doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
             )
         return PVSpec(
             name=self.prefix + xml_pv.suffix,
             value=float(value),
             dtype=float,
-            get=get,
-            put=put,
-            read_only=xml_pv.read_only,
+            get=getter,
+            put=putter,
             cls_kwargs={"precision": DEFAULT_FLOAT_PRECISION},
             doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
         )
@@ -916,14 +917,7 @@ class XrtXmlIOC:
         return value
 
     def _should_use_integer_pv(self, xml_pv: XmlPV) -> bool:
-        if xml_pv.live_kind is None:
-            return isinstance(xml_pv.value, int) and not isinstance(xml_pv.value, bool)
-        attr = xml_pv.attr or xml_pv.arg or xml_pv.path[-1]
-        if attr in DISCRETE_INTEGER_FIELDS:
-            return True
-        if xml_pv.field_name is not None and attr == "histShape":
-            return True
-        return False
+        return xml_pv.binding.integer_hint
 
     def _screen_pv_specs(self) -> list[PVSpec]:
         specs: list[PVSpec] = []
@@ -1018,135 +1012,136 @@ class XrtXmlIOC:
             )
         return specs
 
-    def _attach_live_target(self, xml_pv: XmlPV) -> None:
-        path = xml_pv.path
+    def _live_binding_for(self, entry: XmlEntry) -> LiveBinding | None:
+        path = entry.path
         if len(path) < 3 or path[0] != "Project":
-            return
+            return None
         section = path[1]
 
         if section == self.beamline_name:
             if len(path) == 4 and path[2] == "properties":
-                self._set_attr_live(xml_pv, self.beamline, path[3])
-                return
+                return self._attr_binding(entry, self.beamline, path[3])
             if len(path) < 5:
-                return
+                return None
             oeid = self.element_uuids.get(path[2])
             if oeid is None:
-                return
+                return None
             target = self.beamline.oesDict[oeid][0]
             if len(path) == 5 and path[3] == "properties":
-                self._set_attr_live(xml_pv, target, path[4])
-                return
+                return self._attr_binding(entry, target, path[4])
             if len(path) == 6 and path[4] == "parameters":
-                xml_pv.live_kind = "flow"
-                xml_pv.target = target
-                xml_pv.oeid = oeid
-                xml_pv.method = path[3]
-                xml_pv.arg = path[5]
-                return
+                return self._flow_binding(entry, oeid, path[3], path[5])
+            return None
 
         if section == "Materials" and len(path) == 5 and path[3] == "properties":
             target = self.materials.get(path[2])
             if target is not None:
-                self._set_attr_live(xml_pv, target, path[4])
+                return self._attr_binding(entry, target, path[4])
         elif section == "FigureErrors" and len(path) == 5 and path[3] == "properties":
             target = self.figure_errors.get(path[2])
             if target is not None:
-                self._set_attr_live(xml_pv, target, path[4])
+                return self._attr_binding(entry, target, path[4])
+        return None
 
-    def _set_attr_live(self, xml_pv: XmlPV, target: Any, attr: str) -> None:
+    def _attr_binding(
+        self, entry: XmlEntry, target: Any, attr: str
+    ) -> LiveBinding | None:
         if attr in REF_OR_STRUCTURAL_ATTRS:
-            return
-        xml_pv.live_kind = "attr"
-        xml_pv.target = target
-        xml_pv.attr = attr
+            return None
 
-    def _read_live_value(self, xml_pv: XmlPV) -> Any:
-        if xml_pv.live_kind == "attr":
-            return self._read_live_attr(xml_pv)
-        if xml_pv.live_kind == "flow":
-            return self._read_live_flow(xml_pv)
-        return xml_pv.value
+        def read() -> Any:
+            return self._item_value(
+                getattr(target, attr), entry.field_index, entry.field_name
+            )
 
-    def _read_live_attr(self, xml_pv: XmlPV) -> Any:
-        if xml_pv.attr is None or xml_pv.target is None:
-            return xml_pv.value
-        value = getattr(xml_pv.target, xml_pv.attr)
-        if xml_pv.field_index is not None:
-            value = value[xml_pv.field_index]
+        def write(value: Any) -> None:
+            if entry.field_index is None:
+                setattr(target, attr, self._xrt_value(value))
+                return
+
+            current = getattr(target, attr)
+            if isinstance(current, dict):
+                current[entry.field_name] = value
+                setattr(target, attr, current)
+                return
+
+            try:
+                values = list(current)
+            except TypeError:
+                values = []
+            while len(values) <= entry.field_index:
+                values.append(0)
+            values[entry.field_index] = self._xrt_value(value)
+            setattr(target, attr, self._named_value(attr, values))
+
+        return LiveBinding(
+            read=read,
+            write=write,
+            integer_hint=self._integer_hint(attr, entry.value),
+        )
+
+    def _flow_binding(
+        self, entry: XmlEntry, oeid: str, method: str, arg: str
+    ) -> LiveBinding | None:
+        methods = self.beamline.flowU.get(oeid, {})
+        kwargs = methods.get(method)
+        if kwargs is None or arg not in kwargs:
+            return None
+
+        def read() -> Any:
+            value = kwargs.get(arg, entry.value)
+            if arg == "beam":
+                value = self._beam_name(value)
+            return self._item_value(value, entry.field_index, entry.field_name)
+
+        def write(value: Any) -> None:
+            if entry.field_index is None:
+                kwargs[arg] = self._flow_value(arg, value)
+                return
+
+            values = list(kwargs.get(arg, []))
+            while len(values) <= entry.field_index:
+                values.append(None)
+            values[entry.field_index] = self._xrt_value(value)
+            kwargs[arg] = values
+
+        return LiveBinding(
+            read=read,
+            write=write,
+            integer_hint=self._integer_hint(arg, entry.value),
+            internal=method == "expose" and arg == "withHistogram",
+        )
+
+    def _item_value(
+        self, value: Any, index: int | None, field_name: str | None
+    ) -> Any:
+        if index is not None:
+            value = value[field_name] if isinstance(value, dict) else value[index]
         if isinstance(value, np.generic):
             return value.item()
         return value
 
-    def _read_live_flow(self, xml_pv: XmlPV) -> Any:
-        methods = self.beamline.flowU.get(xml_pv.oeid, {})
-        kwargs = methods.get(xml_pv.method)
-        if kwargs is None or xml_pv.arg is None:
-            return xml_pv.value
-        value = kwargs.get(xml_pv.arg, xml_pv.value)
-        if xml_pv.arg == "beam":
-            for beam_name, beam_tag in self.beamline.beamNamesDict.items():
-                if beam_tag[0] == value:
-                    value = beam_name
-                    break
-        if xml_pv.field_index is not None:
-            value = value[xml_pv.field_index]
-        if isinstance(value, np.generic):
-            return value.item()
+    def _beam_name(self, value: Any) -> Any:
+        for beam_name, beam_tag in self.beamline.beamNamesDict.items():
+            if beam_tag[0] == value:
+                return beam_name
         return value
+
+    def _integer_hint(self, name: str, value: Any) -> bool:
+        if isinstance(value, bool):
+            return False
+        return name in DISCRETE_INTEGER_FIELDS
 
     def _write_live_pv(self, xml_pv: XmlPV, value: Any) -> Any:
         value = _coerce_put_value(value)
         try:
-            if xml_pv.live_kind == "attr":
-                self._write_live_attr(xml_pv, value)
-            elif xml_pv.live_kind == "flow":
-                self._write_live_flow(xml_pv, value)
+            xml_pv.binding.write(value)
         except Exception:
             logger.exception("Could not update live XRT binding for %s", xml_pv.suffix)
             raise
-        readback = self._read_live_value(xml_pv)
+        readback = xml_pv.binding.read()
         xml_pv.value = readback
         return self._pv_readback_value(xml_pv, readback)
-
-    def _write_live_attr(self, xml_pv: XmlPV, value: Any) -> None:
-        attr = xml_pv.attr
-        target = xml_pv.target
-        if attr is None or target is None:
-            return
-        if xml_pv.field_index is None:
-            setattr(target, attr, self._xrt_value(value))
-            return
-
-        current = getattr(target, attr)
-        if isinstance(current, dict):
-            current[xml_pv.field_name] = value
-            setattr(target, attr, current)
-            return
-
-        try:
-            values = list(current)
-        except TypeError:
-            values = []
-        while len(values) <= xml_pv.field_index:
-            values.append(0)
-        values[xml_pv.field_index] = self._xrt_value(value)
-        setattr(target, attr, self._named_value(attr, values))
-
-    def _write_live_flow(self, xml_pv: XmlPV, value: Any) -> None:
-        methods = self.beamline.flowU.get(xml_pv.oeid, {})
-        kwargs = methods.get(xml_pv.method)
-        if kwargs is None or xml_pv.arg is None:
-            return
-        if xml_pv.field_index is None:
-            kwargs[xml_pv.arg] = self._flow_value(xml_pv.arg, value)
-            return
-
-        values = list(kwargs.get(xml_pv.arg, []))
-        while len(values) <= xml_pv.field_index:
-            values.append(None)
-        values[xml_pv.field_index] = self._xrt_value(value)
-        kwargs[xml_pv.arg] = values
 
     def _xrt_value(self, value: Any) -> Any:
         if isinstance(value, str):
@@ -1174,14 +1169,6 @@ class XrtXmlIOC:
         if attr == "histShape":
             return self.raycing.Image2D([int(value) for value in values])
         return values
-
-
-def _pv_value(value: Any, string_pv: bool) -> Any:
-    if string_pv:
-        return _format_text(value)
-    if isinstance(value, np.generic):
-        return value.item()
-    return value
 
 
 def main() -> None:

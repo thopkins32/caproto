@@ -3800,7 +3800,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/websockets?source=compressed-mapping
+  - pkg:pypi/websockets?source=hash-mapping
   run_exports: {}
   size: 372055
   timestamp: 1784377049841
@@ -4331,7 +4331,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/asteval?source=compressed-mapping
+  - pkg:pypi/asteval?source=hash-mapping
   run_exports: {}
   size: 29042
   timestamp: 1781285421055
@@ -4434,7 +4434,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/boltons?source=compressed-mapping
+  - pkg:pypi/boltons?source=hash-mapping
   run_exports: {}
   size: 309453
   timestamp: 1784706150046
@@ -4661,7 +4661,7 @@ packages:
   license: BSD-2-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/decorator?source=compressed-mapping
+  - pkg:pypi/decorator?source=hash-mapping
   run_exports: {}
   size: 16102
   timestamp: 1779115228886
@@ -4846,8 +4846,7 @@ packages:
   - python-multipart
   - uvicorn-standard
   license: MIT
-  purls:
-  - pkg:pypi/fastapi?source=compressed-mapping
+  purls: []
   run_exports: {}
   size: 4840
   timestamp: 1785258435997
@@ -5119,7 +5118,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/humanize?source=compressed-mapping
+  - pkg:pypi/humanize?source=hash-mapping
   run_exports: {}
   size: 72882
   timestamp: 1782906300604
@@ -5431,7 +5430,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/narwhals?source=compressed-mapping
+  - pkg:pypi/narwhals?source=hash-mapping
   run_exports: {}
   size: 289946
   timestamp: 1783943716915
@@ -5463,7 +5462,7 @@ packages:
   license: Apache-2.0
   license_family: APACHE
   purls:
-  - pkg:pypi/opentelemetry-api?source=compressed-mapping
+  - pkg:pypi/opentelemetry-api?source=hash-mapping
   run_exports: {}
   size: 52149
   timestamp: 1784225783127
@@ -5851,7 +5850,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/rich-toolkit?source=compressed-mapping
+  - pkg:pypi/rich-toolkit?source=hash-mapping
   run_exports: {}
   size: 34824
   timestamp: 1784024058693
