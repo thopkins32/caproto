@@ -33,12 +33,14 @@ logger = logging.getLogger("caproto.ctx.xrt_xml_ioc")
 
 DEFAULT_IMAGE_MAX_LENGTH = 1024 * 1024
 DEFAULT_FLOAT_PRECISION = 6
+MAX_PV_NAME_LENGTH = 59
 PATH_STRING_MAX_LENGTH = 4096
 FILENAME_STRING_MAX_LENGTH = 1024
 STATUS_STRINGS = ["Idle", "Acquiring", "Writing", "Error"]
 BINARY_STRINGS = ["Off", "On"]
 STRING_KWARGS = dict(string_encoding="utf-8", report_as_string=True)
 STRUCTURAL_COMPONENTS = {"properties", "parameters"}
+SHORTENED_TOP_LEVEL_CONTEXTS = {"Materials", "FigureErrors"}
 REF_OR_STRUCTURAL_ATTRS = {
     "bl",
     "uuid",
@@ -349,8 +351,15 @@ def _suffix_from_parts(parts: tuple[str, ...]) -> str:
     return ":".join(_safe_component(part) for part in parts if part)
 
 
-def _path_parts(path: tuple[str, ...], *, drop_structural: bool) -> tuple[str, ...]:
+def _path_parts(
+    path: tuple[str, ...],
+    *,
+    drop_structural: bool,
+    drop_top_level: set[str] | frozenset[str] = frozenset(),
+) -> tuple[str, ...]:
     parts = path[1:] if path and path[0] == "Project" else path
+    if parts and parts[0] in drop_top_level:
+        parts = parts[1:]
     if drop_structural:
         parts = tuple(part for part in parts if part not in STRUCTURAL_COMPONENTS)
     return parts
@@ -416,26 +425,122 @@ def _iter_xml_entries(root: ET.Element) -> list[XmlEntry]:
     return entries
 
 
-def _entry_suffix(entry: XmlEntry, *, drop_structural: bool) -> str:
-    parts = _path_parts(entry.path, drop_structural=drop_structural)
+def _entry_suffix(
+    entry: XmlEntry,
+    *,
+    drop_structural: bool,
+    drop_top_level: set[str] | frozenset[str] = frozenset(),
+    drop_method_context: bool = False,
+) -> str:
+    parts = _path_parts(
+        entry.path,
+        drop_structural=drop_structural,
+        drop_top_level=drop_top_level,
+    )
+    if drop_method_context and len(entry.path) >= 6 and entry.path[-2] == "parameters":
+        parts = (*parts[:-2], parts[-1])
     if entry.field_name is not None:
         parts = (*parts, entry.field_name)
     return _suffix_from_parts(parts)
 
 
-def _unique_suffixes(entries: list[XmlEntry]) -> list[str]:
-    dropped_suffixes = [_entry_suffix(entry, drop_structural=True) for entry in entries]
-    full_suffixes = [_entry_suffix(entry, drop_structural=False) for entry in entries]
-    counts = Counter(dropped_suffixes)
+def _deduplicate(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(values))
+
+
+def _suffixes_with_fallback(
+    candidates: list[list[str]], *, max_length: int | None = None
+) -> list[str]:
+    if max_length is not None:
+        shortest_too_long = []
+        filtered_candidates = []
+        for suffixes in candidates:
+            filtered = [suffix for suffix in suffixes if len(suffix) <= max_length]
+            if filtered:
+                filtered_candidates.append(filtered)
+                continue
+            shortest_too_long.append(min(suffixes, key=len))
+
+        if shortest_too_long:
+            examples = ", ".join(
+                f"{suffix!r} ({len(suffix)} chars)"
+                for suffix in shortest_too_long[:3]
+            )
+            raise ValueError(
+                f"Could not generate PV suffixes within {max_length} characters; "
+                f"shortest candidate(s): {examples}"
+            )
+        candidates = filtered_candidates
+
+    selected = [candidate[0] for candidate in candidates]
+
+    while True:
+        counts = Counter(selected)
+        changed = False
+        for index, suffix in enumerate(selected):
+            if counts[suffix] <= 1 or len(candidates[index]) == 1:
+                continue
+            candidates[index].pop(0)
+            selected[index] = candidates[index][0]
+            changed = True
+        if not changed:
+            break
+
     used: Counter[str] = Counter()
     suffixes = []
-    for dropped, full in zip(dropped_suffixes, full_suffixes):
-        suffix = dropped if counts[dropped] == 1 else full
+    for suffix in selected:
         used[suffix] += 1
         if used[suffix] > 1:
             suffix = f"{suffix}_{used[suffix]}"
+            if max_length is not None and len(suffix) > max_length:
+                raise ValueError(
+                    f"Could not generate a unique PV suffix within {max_length} "
+                    f"characters; {suffix!r} is {len(suffix)} characters"
+                )
         suffixes.append(suffix)
     return suffixes
+
+
+def _unique_suffixes(
+    entries: list[XmlEntry],
+    *,
+    drop_top_level: set[str] | frozenset[str] = frozenset(),
+    max_length: int | None = None,
+) -> list[str]:
+    candidates = [
+        _deduplicate(
+            [
+                _entry_suffix(
+                    entry,
+                    drop_structural=True,
+                    drop_top_level=drop_top_level,
+                ),
+                _entry_suffix(
+                    entry,
+                    drop_structural=True,
+                    drop_top_level=drop_top_level,
+                    drop_method_context=True,
+                ),
+                _entry_suffix(entry, drop_structural=True),
+                _entry_suffix(entry, drop_structural=False),
+            ]
+        )
+        for entry in entries
+    ]
+    return _suffixes_with_fallback(candidates, max_length=max_length)
+
+
+def _validate_pv_name_lengths(names: list[str]) -> None:
+    too_long = [name for name in names if len(name) > MAX_PV_NAME_LENGTH]
+    if not too_long:
+        return
+    examples = ", ".join(
+        f"{name!r} ({len(name)} chars)" for name in too_long[:3]
+    )
+    raise ValueError(
+        f"PV names must be at most {MAX_PV_NAME_LENGTH} characters; "
+        f"too-long name(s): {examples}"
+    )
 
 
 def _child_text(parent: ET.Element | None, name: str) -> str | None:
@@ -707,6 +812,10 @@ class XrtXmlIOC:
             else self.beamline.name
         )
         self.element_uuids = self._element_uuid_map()
+        self.shortened_top_level_contexts = {
+            self.beamline_name,
+            *SHORTENED_TOP_LEVEL_CONTEXTS,
+        }
         self.materials = self._named_object_map(
             "Materials", "matnamesToUUIDs", "materialsDict"
         )
@@ -795,7 +904,7 @@ class XrtXmlIOC:
             if xml_name is None:
                 pv_suffix_base = safe_name
             else:
-                pv_suffix_base = _suffix_from_parts((self.beamline_name, xml_name))
+                pv_suffix_base = _suffix_from_parts((xml_name,))
             used_pv_suffixes[pv_suffix_base] += 1
             if used_pv_suffixes[pv_suffix_base] > 1:
                 pv_suffix_base = f"{pv_suffix_base}_{used_pv_suffixes[pv_suffix_base]}"
@@ -809,6 +918,7 @@ class XrtXmlIOC:
 
     def _build_pvdb(self) -> dict[str, Any]:
         specs = [*self._xml_pv_specs(), *self._screen_pv_specs()]
+        _validate_pv_name_lengths([spec.name for spec in specs])
         pvdb = {spec.name: spec.create(group=None) for spec in specs}
         for screen in self.screens.values():
             base = f"{self.prefix}{screen.pv_suffix_base}"
@@ -842,7 +952,11 @@ class XrtXmlIOC:
             entry.value = value
             bound_entries.append((entry, binding))
 
-        suffixes = _unique_suffixes([entry for entry, _binding in bound_entries])
+        suffixes = _unique_suffixes(
+            [entry for entry, _binding in bound_entries],
+            drop_top_level=self.shortened_top_level_contexts,
+            max_length=self._pv_suffix_max_length(),
+        )
         specs = []
         for suffix, (entry, binding) in zip(suffixes, bound_entries):
             xml_pv = XmlPV(
@@ -856,6 +970,15 @@ class XrtXmlIOC:
             self.mapping[suffix] = xml_pv
             specs.append(self._config_spec(xml_pv))
         return specs
+
+    def _pv_suffix_max_length(self) -> int:
+        suffix_max_length = MAX_PV_NAME_LENGTH - len(self.prefix)
+        if suffix_max_length <= 0:
+            raise ValueError(
+                f"Prefix {self.prefix!r} is {len(self.prefix)} characters; "
+                f"PV names must be at most {MAX_PV_NAME_LENGTH} characters"
+            )
+        return suffix_max_length
 
     def _config_spec(self, xml_pv: XmlPV) -> PVSpec:
         async def getter(instance, *, xml_pv=xml_pv):
