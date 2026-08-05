@@ -1,25 +1,25 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project>
 	<Beams type="prop">
-		<None type="flat"></None>
-		<TPW_global type="flat"></TPW_global>
-		<FE_MASK_local type="flat"></FE_MASK_local>
-		<M1_VCM_global type="flat"></M1_VCM_global>
-		<M1_VCM_local type="flat"></M1_VCM_local>
-		<Diag1_local type="flat"></Diag1_local>
-		<DCM_global type="flat"></DCM_global>
-		<DCM_local1 type="flat"></DCM_local1>
-		<DCM_local2 type="flat"></DCM_local2>
-		<PinkBeamStop_local type="flat"></PinkBeamStop_local>
-		<Diag2_local type="flat"></Diag2_local>
-		<M2_TFM_global type="flat"></M2_TFM_global>
-		<M2_TFM_local type="flat"></M2_TFM_local>
-		<M3_HRM_global type="flat"></M3_HRM_global>
-		<M3_HRM_local type="flat"></M3_HRM_local>
-		<NANO_BPM_local type="flat"></NANO_BPM_local>
-		<BeamShutter_local type="flat"></BeamShutter_local>
-		<XAS_SAMPLE_local type="flat"></XAS_SAMPLE_local>
-		<XRD_SAMPLE_local type="flat"></XRD_SAMPLE_local>
+		<None type="flat" />
+		<TPW_global type="flat" />
+		<FE_MASK_local type="flat" />
+		<M1_VCM_global type="flat" />
+		<M1_VCM_local type="flat" />
+		<Diag1_local type="flat" />
+		<DCM_global type="flat" />
+		<DCM_local1 type="flat" />
+		<DCM_local2 type="flat" />
+		<PinkBeamStop_local type="flat" />
+		<Diag2_local type="flat" />
+		<M2_TFM_global type="flat" />
+		<M2_TFM_local type="flat" />
+		<M3_HRM_global type="flat" />
+		<M3_HRM_local type="flat" />
+		<NANO_BPM_local type="flat" />
+		<BeamShutter_local type="flat" />
+		<XAS_SAMPLE_local type="flat" />
+		<XRD_SAMPLE_local type="flat" />
 	</Beams>
 	<Materials type="prop">
 		<Si111 type="value">
@@ -122,7 +122,7 @@
 		<properties type="prop">
 			<azimuth type="param">0.0</azimuth>
 			<height type="param">0.0</height>
-			<alignE type="param">auto</alignE>
+			<alignE type="param">9050</alignE>
 			<fileName type="param">None</fileName>
 			<name type="param">BMM</name>
 			<description type="param">None</description>
@@ -251,13 +251,13 @@
 			<properties type="prop">
 				<bl type="param">BMM</bl>
 				<name type="param">Diag1</name>
-				<center type="param">[0.0, 25077, 'auto']</center>
+				<center type="param">[0.0, 25077.0, 84.50894748262438]</center>
 				<x type="param">[1.0, -0.0, 0.0]</x>
 				<z type="param">[0.0, 0.0, 1.0]</z>
 				<compressX type="param">None</compressX>
 				<compressZ type="param">None</compressZ>
-				<limPhysX type="param">[0.0, 0.0]</limPhysX>
-				<limPhysY type="param">[0.0, 0.0]</limPhysY>
+				<limPhysX type="param">[-19.598139548061027, 19.465256285193142]</limPhysX>
+				<limPhysY type="param">[-1.3494830895727148, 1.369159799070502]</limPhysY>
 				<cLimits type="param">[0.0, 0.0]</cLimits>
 				<histShape type="param">[256, 256]</histShape>
 			</properties>
@@ -292,7 +292,7 @@
 				<fixedOffset type="param">30</fixedOffset>
 				<bl type="param">BMM</bl>
 				<name type="param">DCM</name>
-				<center type="param">[0, 26105, 'auto']</center>
+				<center type="param">[0.0, 26105.0, 91.70508948725096]</center>
 				<pitch type="param">0</pitch>
 				<roll type="param">0</roll>
 				<yaw type="param">0</yaw>
@@ -340,7 +340,7 @@
 			<properties type="prop">
 				<bl type="param">BMM</bl>
 				<name type="param">PinkBeamStop</name>
-				<center type="param">[0, 26450, 'auto']</center>
+				<center type="param">[0.0, 26450.0, 124.07154184030665]</center>
 				<blades type="param">{'left': -10, 'right': 10, 'bottom': -10, 'top': 10}</blades>
 				<x type="param">[1.0, -0.0, 0.0]</x>
 				<z type="param">[0.0, 0.0, 1.0]</z>
@@ -363,13 +363,13 @@
 			<properties type="prop">
 				<bl type="param">BMM</bl>
 				<name type="param">Diag2</name>
-				<center type="param">[0.0, 27050, 'auto']</center>
+				<center type="param">[0.0, 27050.0, 128.29324364808926]</center>
 				<x type="param">[1.0, -0.0, 0.0]</x>
 				<z type="param">[0.0, 0.0, 1.0]</z>
 				<compressX type="param">None</compressX>
 				<compressZ type="param">None</compressZ>
-				<limPhysX type="param">[0.0, 0.0]</limPhysX>
-				<limPhysY type="param">[0.0, 0.0]</limPhysY>
+				<limPhysX type="param">[-10.21523259696336, 10.230188251829981]</limPhysX>
+				<limPhysY type="param">[-1.271072170789914, 1.4401512110890025]</limPhysY>
 				<cLimits type="param">[0.0, 0.0]</cLimits>
 				<histShape type="param">[256, 256]</histShape>
 			</properties>
@@ -390,7 +390,7 @@
 			<properties type="prop">
 				<bl type="param">BMM</bl>
 				<name type="param">M2_TFM</name>
-				<center type="param">[0, 28473, 'auto']</center>
+				<center type="param">[0.0, 28473.0, 138.25440282538193]</center>
 				<pitch type="param">-0.0035</pitch>
 				<roll type="param">0</roll>
 				<yaw type="param">0</yaw>
@@ -438,7 +438,7 @@
 			<properties type="prop">
 				<bl type="param">BMM</bl>
 				<name type="param">M3_HRM</name>
-				<center type="param">[0, 30381, 'auto']</center>
+				<center type="param">[0.0, 30381.0, 137.8147686567006]</center>
 				<pitch type="param">3mrad</pitch>
 				<roll type="param">0</roll>
 				<yaw type="param">0</yaw>
@@ -484,13 +484,13 @@
 			<properties type="prop">
 				<bl type="param">BMM</bl>
 				<name type="param">NANO_BPM</name>
-				<center type="param">[0, 31122, 'auto']</center>
+				<center type="param">[0.0, 31122.0, 133.3226640586379]</center>
 				<x type="param">[1.0, -0.0, 0.0]</x>
 				<z type="param">[0.0, 0.0, 1.0]</z>
 				<compressX type="param">None</compressX>
 				<compressZ type="param">None</compressZ>
-				<limPhysX type="param">[0.0, 0.0]</limPhysX>
-				<limPhysY type="param">[0.0, 0.0]</limPhysY>
+				<limPhysX type="param">[-9.76577515111002, 9.874717336637776]</limPhysX>
+				<limPhysY type="param">[-1.496182625546541, 1.682814567048688]</limPhysY>
 				<cLimits type="param">[0.0, 0.0]</cLimits>
 				<histShape type="param">[256, 256]</histShape>
 			</properties>
@@ -511,7 +511,7 @@
 			<properties type="prop">
 				<bl type="param">BMM</bl>
 				<name type="param">BeamShutter</name>
-				<center type="param">[0, 31555, 'auto']</center>
+				<center type="param">[0.0, 31555.0, 130.72108402743868]</center>
 				<blades type="param">{'left': -10, 'right': 10, 'bottom': -3, 'top': 3}</blades>
 				<x type="param">[1.0, -0.0, 0.0]</x>
 				<z type="param">[0.0, 0.0, 1.0]</z>
@@ -534,7 +534,7 @@
 			<properties type="prop">
 				<bl type="param">BMM</bl>
 				<name type="param">XAS_SAMPLE</name>
-				<center type="param">[0, 40300, 'auto']</center>
+				<center type="param">[0.0, 40300.0, 78.17878062596694]</center>
 				<x type="param">[1.0, -0.0, 0.0]</x>
 				<z type="param">[0.0, 0.0, 1.0]</z>
 				<compressX type="param">None</compressX>
@@ -561,13 +561,13 @@
 			<properties type="prop">
 				<bl type="param">BMM</bl>
 				<name type="param">XRD_SAMPLE</name>
-				<center type="param">[0, 44509, 'auto']</center>
+				<center type="param">[0.0, 44509.0, 52.88998073839751]</center>
 				<x type="param">[1.0, -0.0, 0.0]</x>
 				<z type="param">[0.0, 0.0, 1.0]</z>
 				<compressX type="param">None</compressX>
 				<compressZ type="param">None</compressZ>
-				<limPhysX type="param">[0.0, 0.0]</limPhysX>
-				<limPhysY type="param">[0.0, 0.0]</limPhysY>
+				<limPhysX type="param">[-4.460186274674908, 4.571810594663764]</limPhysX>
+				<limPhysY type="param">[-0.7646752784602171, 0.9319336508128799]</limPhysY>
 				<cLimits type="param">[0.0, 0.0]</cLimits>
 				<histShape type="param">[256, 256]</histShape>
 			</properties>
