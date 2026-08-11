@@ -24,6 +24,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 import numpy as np
+import xrt.backends.raycing as raycing
+import h5py
 
 from caproto import ChannelType
 from caproto.server import PVSpec, run, template_arg_parser
@@ -136,11 +138,6 @@ class ScreenCapture:
         *,
         overwrite: bool,
     ) -> None:
-        try:
-            import h5py
-        except ImportError as exc:
-            raise RuntimeError("h5py is required when Capture=1") from exc
-
         if self.is_open:
             return
 
@@ -230,19 +227,6 @@ class ScreenState:
         except Exception:
             width, height = 256, 256
         return height, width
-
-
-def _import_raycing():
-    try:
-        import xrt.backends.raycing as raycing
-    except ModuleNotFoundError as exc:
-        if exc.name != "xrt":
-            raise
-        raise RuntimeError(
-            "Install xrt into the active environment; with pixi, add it as a "
-            "conda or PyPI dependency."
-        ) from exc
-    return raycing
 
 
 def _split_top_level(text: str) -> list[str]:
@@ -463,8 +447,7 @@ def _suffixes_with_fallback(
 
         if shortest_too_long:
             examples = ", ".join(
-                f"{suffix!r} ({len(suffix)} chars)"
-                for suffix in shortest_too_long[:3]
+                f"{suffix!r} ({len(suffix)} chars)" for suffix in shortest_too_long[:3]
             )
             raise ValueError(
                 f"Could not generate PV suffixes within {max_length} characters; "
@@ -534,9 +517,7 @@ def _validate_pv_name_lengths(names: list[str]) -> None:
     too_long = [name for name in names if len(name) > MAX_PV_NAME_LENGTH]
     if not too_long:
         return
-    examples = ", ".join(
-        f"{name!r} ({len(name)} chars)" for name in too_long[:3]
-    )
+    examples = ", ".join(f"{name!r} ({len(name)} chars)" for name in too_long[:3])
     raise ValueError(
         f"PV names must be at most {MAX_PV_NAME_LENGTH} characters; "
         f"too-long name(s): {examples}"
@@ -801,7 +782,7 @@ class XrtXmlIOC:
         self.prefix = prefix
         self.image_max_length = max(1, int(image_max_length))
         self.overwrite = overwrite
-        self.raycing = _import_raycing()
+        self.raycing = raycing
         self.tree = ET.parse(self.xml_path)
         self.root = self.tree.getroot()
         self.beamline = self.raycing.BeamLine(fileName=str(self.xml_path))
@@ -1235,9 +1216,7 @@ class XrtXmlIOC:
             internal=method == "expose" and arg == "withHistogram",
         )
 
-    def _item_value(
-        self, value: Any, index: int | None, field_name: str | None
-    ) -> Any:
+    def _item_value(self, value: Any, index: int | None, field_name: str | None) -> Any:
         if index is not None:
             value = value[field_name] if isinstance(value, dict) else value[index]
         if isinstance(value, np.generic):
