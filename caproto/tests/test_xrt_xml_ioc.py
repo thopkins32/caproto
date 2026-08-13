@@ -1,6 +1,33 @@
+from types import SimpleNamespace
+
 import pytest
 
-from caproto.ioc_examples.xrt_xml_ioc import XmlEntry, _unique_suffixes
+from caproto.ioc_examples.xrt_xml_ioc import XrtXmlIOC, XmlEntry, _unique_suffixes
+
+
+def test_attr_binding_exposes_named_material_reference():
+    si111 = SimpleNamespace(name="Si111")
+    si311 = SimpleNamespace(name="Si311")
+    ioc = object.__new__(XrtXmlIOC)
+    ioc.materials = {"Si111": si111, "Si311": si311}
+    ioc.figure_errors = {}
+    ioc.raycing = SimpleNamespace(parametrize=lambda value: ioc.materials[value])
+    target = SimpleNamespace(material=si111)
+    entry = XmlEntry(
+        path=("Project", "BMM", "DCM", "properties", "material"),
+        raw_text="Si111",
+        value="Si111",
+    )
+
+    binding = XrtXmlIOC._attr_binding(ioc, entry, target, "material")
+
+    assert binding is not None
+    assert binding.read() == "Si111"
+    binding.write("Si311")
+    assert target.material is si311
+    assert binding.read() == "Si311"
+    with pytest.raises(ValueError, match="Unknown material reference 'Missing'"):
+        binding.write("Missing")
 
 
 def test_unique_suffixes_drop_xml_contexts():

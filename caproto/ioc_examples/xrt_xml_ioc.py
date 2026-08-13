@@ -43,19 +43,18 @@ BINARY_STRINGS = ["Off", "On"]
 STRING_KWARGS = dict(string_encoding="utf-8", report_as_string=True)
 STRUCTURAL_COMPONENTS = {"properties", "parameters"}
 SHORTENED_TOP_LEVEL_CONTEXTS = {"Materials", "FigureErrors"}
-REF_OR_STRUCTURAL_ATTRS = {
-    "bl",
-    "uuid",
+MATERIAL_REFERENCE_ATTRS = {
     "material",
     "material2",
-    "figureError",
-    "baseFE",
-    "elements",
     "coating",
     "substrate",
     "tLayer",
     "bLayer",
 }
+FIGURE_ERROR_REFERENCE_ATTRS = {"figureError", "baseFE"}
+REFERENCE_ATTRS = MATERIAL_REFERENCE_ATTRS | FIGURE_ERROR_REFERENCE_ATTRS
+SKIPPED_ATTRS = {"bl", "uuid", "elements"}
+REF_OR_STRUCTURAL_ATTRS = REFERENCE_ATTRS | SKIPPED_ATTRS
 COMPOUND_FIELDS = {
     "center": ["x", "y", "z"],
     "x": ["x", "y", "z"],
@@ -1147,10 +1146,81 @@ class XrtXmlIOC:
                 return self._attr_binding(entry, target, path[4])
         return None
 
+    def _reference_binding(
+        self, entry: XmlEntry, target: Any, attr: str
+    ) -> LiveBinding:
+        reference_maps = self._reference_maps_for_attr(attr)
+
+        def read() -> Any:
+            return self._reference_name(getattr(target, attr), reference_maps)
+
+        def write(value: Any) -> None:
+            setattr(target, attr, self._reference_value(value, reference_maps, attr))
+
+        return LiveBinding(read=read, write=write)
+
+    def _reference_maps_for_attr(
+        self, attr: str
+    ) -> tuple[dict[str, Any], ...]:
+        if attr in MATERIAL_REFERENCE_ATTRS:
+            return (self.materials,)
+        if attr in FIGURE_ERROR_REFERENCE_ATTRS:
+            return (self.figure_errors,)
+        return ()
+
+    def _reference_name(
+        self, value: Any, reference_maps: tuple[dict[str, Any], ...]
+    ) -> Any:
+        if value is None or isinstance(value, str):
+            return value
+        for reference_map in reference_maps:
+            for name, obj in reference_map.items():
+                if obj is value:
+                    return name
+        name = getattr(value, "name", None)
+        if isinstance(name, str) and name:
+            return name
+        uuid = getattr(value, "uuid", None)
+        if isinstance(uuid, str) and uuid:
+            return uuid
+        return str(value)
+
+    def _reference_value(
+        self, value: Any, reference_maps: tuple[dict[str, Any], ...], attr: str
+    ) -> Any:
+        value = _coerce_put_value(value)
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            return value
+
+        text = value.strip()
+        if not text:
+            return None
+        for reference_map in reference_maps:
+            if text in reference_map:
+                return reference_map[text]
+
+        resolved = self._xrt_value(text)
+        if resolved is not text and not (
+            isinstance(resolved, str) and resolved == text
+        ):
+            return resolved
+
+        known_names = sorted(
+            {name for reference_map in reference_maps for name in reference_map}
+        )
+        message = f"Unknown {attr} reference {text!r}"
+        if known_names:
+            message += f"; known names: {', '.join(known_names)}"
+        raise ValueError(message)
+
     def _attr_binding(
         self, entry: XmlEntry, target: Any, attr: str
     ) -> LiveBinding | None:
-        if attr in REF_OR_STRUCTURAL_ATTRS:
+        if attr in REFERENCE_ATTRS:
+            return self._reference_binding(entry, target, attr)
+        if attr in SKIPPED_ATTRS:
             return None
 
         def read() -> Any:
