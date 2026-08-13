@@ -39,8 +39,8 @@ MAX_PV_NAME_LENGTH = 59
 PATH_STRING_MAX_LENGTH = 4096
 FILENAME_STRING_MAX_LENGTH = 1024
 STATUS_STRINGS = ["Idle", "Acquiring", "Writing", "Error"]
-BINARY_STRINGS = ["Off", "On"]
 STRING_KWARGS = dict(string_encoding="utf-8", report_as_string=True)
+
 STRUCTURAL_COMPONENTS = {"properties", "parameters"}
 SHORTENED_TOP_LEVEL_CONTEXTS = {"Materials", "FigureErrors"}
 MATERIAL_REFERENCE_ATTRS = {
@@ -226,7 +226,6 @@ class ScreenState:
         except Exception:
             width, height = 256, 256
         return height, width
-
 
 def _split_top_level(text: str) -> list[str]:
     parts = []
@@ -980,13 +979,18 @@ class XrtXmlIOC:
                 doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
             )
         if isinstance(value, bool):
+            async def bool_getter(instance, *, xml_pv=xml_pv):
+                return int(_bool_value(xml_pv.binding.read()))
+
+            async def bool_putter(instance, value, *, xml_pv=xml_pv):
+                return int(self._write_live_pv(xml_pv, _bool_value(value)))
+
             return PVSpec(
                 name=self.prefix + xml_pv.suffix,
-                value=value,
-                dtype=bool,
-                record="bo",
-                get=getter,
-                put=putter,
+                value=int(value),
+                dtype=ChannelType.INT,
+                get=bool_getter,
+                put=bool_putter,
                 doc=f"XML {xml_pv.xml_path}; raw XML value {xml_pv.raw_text!r}",
             )
         if self._should_use_integer_pv(xml_pv) and isinstance(value, (int, float)):
@@ -1030,13 +1034,13 @@ class XrtXmlIOC:
             async def acquire_putter(instance, value, *, screen=screen):
                 if _bool_value(value):
                     await self.coordinator.request(screen.safe_name)
-                await instance.write("Off", verify_value=False)
-                return "Off"
+                await instance.write(0, verify_value=False)
+                return 0
 
             async def capture_putter(instance, value, *, screen=screen):
                 enabled = _bool_value(value)
                 ok = await self.coordinator.set_capture(screen, enabled)
-                return "On" if enabled and ok else "Off"
+                return int(enabled and ok)
 
             async def num_images_putter(instance, value):
                 return max(1, int(_coerce_put_value(value)))
@@ -1048,10 +1052,8 @@ class XrtXmlIOC:
                 [
                     PVSpec(
                         name=self.prefix + f"{base}:Acquire",
-                        value="Off",
-                        dtype=ChannelType.ENUM,
-                        record="bo",
-                        cls_kwargs={"enum_strings": BINARY_STRINGS},
+                        value=0,
+                        dtype=ChannelType.INT,
                         put=acquire_putter,
                         doc="Per-screen software trigger",
                     ),
@@ -1066,10 +1068,8 @@ class XrtXmlIOC:
                     ),
                     PVSpec(
                         name=self.prefix + f"{base}:Capture",
-                        value="Off",
-                        dtype=ChannelType.ENUM,
-                        record="bo",
-                        cls_kwargs={"enum_strings": BINARY_STRINGS},
+                        value=0,
+                        dtype=ChannelType.INT,
                         put=capture_putter,
                         shutdown=shutdown,
                         doc="Open or close this screen's HDF5 file",
