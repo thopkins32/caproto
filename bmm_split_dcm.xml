@@ -1,0 +1,1011 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Project>
+	<Beams type="prop">
+		<None type="flat" />
+		<TPW_global type="flat" />
+		<FE_MASK_local type="flat" />
+		<M1_VCM_global type="flat" />
+		<M1_VCM_local type="flat" />
+		<Diag1_local type="flat" />
+		<DCM_C1_global type="flat" />
+		<DCM_global type="flat" />
+		<DCM_local1 type="flat" />
+		<DCM_local2 type="flat" />
+		<PinkBeamStop_local type="flat" />
+		<DM2_Slits_local type="flat" />
+		<Diag2_local type="flat" />
+		<M2_TFM_global type="flat" />
+		<M2_TFM_local type="flat" />
+		<M3_HRM_global type="flat" />
+		<M3_HRM_local type="flat" />
+		<NANO_BPM_local type="flat" />
+		<BeamShutter_local type="flat" />
+		<DM3_Slits_local type="flat" />
+		<XAS_SAMPLE_local type="flat" />
+		<XRD_SAMPLE_local type="flat" />
+	</Beams>
+	<Materials type="prop">
+		<Si111 type="value">
+			<properties type="prop">
+				<tK type="param">297.15</tK>
+				<a type="param">5.4307717932001225</a>
+				<hkl type="param">[1, 1, 1]</hkl>
+				<d type="param">3.1354575567115175</d>
+				<V type="param">160.17128543981727</V>
+				<elements type="param">['Si']</elements>
+				<quantities type="param">[1.0]</quantities>
+				<rho type="param">0</rho>
+				<t type="param">None</t>
+				<factDW type="param">1.0</factDW>
+				<geom type="param">Bragg reflected</geom>
+				<table type="param">Chantler total</table>
+				<name type="param">Si111</name>
+				<volumetricDiffraction type="param">False</volumetricDiffraction>
+				<useTT type="param">False</useTT>
+				<nu type="param">None</nu>
+				<mosaicity type="param">0</mosaicity>
+				<efficiency type="param">None</efficiency>
+				<efficiencyFile type="param">None</efficiencyFile>
+				<refractiveIndex type="param">None</refractiveIndex>
+			</properties>
+			<_object type="param">xrt.backends.raycing.materials.crystals_basic.CrystalSi</_object>
+		</Si111>
+		<Si311 type="value">
+			<properties type="prop">
+				<tK type="param">297.15</tK>
+				<a type="param">5.4307717932001225</a>
+				<hkl type="param">[3, 1, 1]</hkl>
+				<d type="param">1.6374393054627614</d>
+				<V type="param">160.17128543981727</V>
+				<elements type="param">['Si']</elements>
+				<quantities type="param">[1.0]</quantities>
+				<rho type="param">0</rho>
+				<t type="param">None</t>
+				<factDW type="param">1.0</factDW>
+				<geom type="param">Bragg reflected</geom>
+				<table type="param">Chantler total</table>
+				<name type="param">Si311</name>
+				<volumetricDiffraction type="param">False</volumetricDiffraction>
+				<useTT type="param">False</useTT>
+				<nu type="param">None</nu>
+				<mosaicity type="param">0</mosaicity>
+				<efficiency type="param">None</efficiency>
+				<efficiencyFile type="param">None</efficiencyFile>
+				<refractiveIndex type="param">None</refractiveIndex>
+			</properties>
+			<_object type="param">xrt.backends.raycing.materials.crystals_basic.CrystalSi</_object>
+		</Si311>
+		<pt01 type="value">
+			<properties type="prop">
+				<name type="param">pt01</name>
+				<elements type="param">['Pt']</elements>
+				<rho type="param">21.45</rho>
+				<quantities type="param">[1.0]</quantities>
+				<kind type="param">auto</kind>
+				<t type="param">None</t>
+				<table type="param">Chantler total</table>
+				<efficiency type="param">None</efficiency>
+				<efficiencyFile type="param">None</efficiencyFile>
+				<refractiveIndex type="param">None</refractiveIndex>
+			</properties>
+			<_object type="param">xrt.backends.raycing.materials.elemental.Pt</_object>
+		</pt01>
+		<rh01 type="value">
+			<properties type="prop">
+				<name type="param">rh01</name>
+				<elements type="param">['Rh']</elements>
+				<rho type="param">12.41</rho>
+				<quantities type="param">[1.0]</quantities>
+				<kind type="param">auto</kind>
+				<t type="param">None</t>
+				<table type="param">Chantler total</table>
+				<efficiency type="param">None</efficiency>
+				<efficiencyFile type="param">None</efficiencyFile>
+				<refractiveIndex type="param">None</refractiveIndex>
+			</properties>
+			<_object type="param">xrt.backends.raycing.materials.elemental.Rh</_object>
+		</rh01>
+		<si01 type="value">
+			<properties type="prop">
+				<name type="param">si01</name>
+				<elements type="param">['Si']</elements>
+				<rho type="param">2.33</rho>
+				<quantities type="param">[1.0]</quantities>
+				<kind type="param">auto</kind>
+				<t type="param">None</t>
+				<table type="param">Chantler total</table>
+				<efficiency type="param">None</efficiency>
+				<efficiencyFile type="param">None</efficiencyFile>
+				<refractiveIndex type="param">None</refractiveIndex>
+			</properties>
+			<_object type="param">xrt.backends.raycing.materials.elemental.Si</_object>
+		</si01>
+		<rhpt01 type="value">
+			<properties type="prop">
+				<name type="param">rhpt01</name>
+				<coating type="param">rh01</coating>
+				<cThickness type="param">50.0</cThickness>
+				<substrate type="param">pt01</substrate>
+				<surfaceRoughness type="param">3.0</surfaceRoughness>
+				<geom type="param">reflected</geom>
+			</properties>
+			<_object type="param">xrt.backends.raycing.materials.multilayer.Coated</_object>
+		</rhpt01>
+	</Materials>
+	<BMM type="value">
+		<properties type="prop">
+			<azimuth type="param">0.0</azimuth>
+			<height type="param">0.0</height>
+			<alignE type="param">7112</alignE>
+			<fileName type="param">None</fileName>
+			<name type="param">BMM</name>
+			<description type="param">None</description>
+		</properties>
+		<_object type="param">xrt.backends.raycing.BeamLine</_object>
+		<TPW type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">TPW</name>
+				<center type="param">(0, 0, 0)</center>
+				<pitch type="param">0</pitch>
+				<yaw type="param">0</yaw>
+				<nrays type="param">100000</nrays>
+				<eE type="param">3.0</eE>
+				<eI type="param">0.5</eI>
+				<eEspread type="param">0.0009</eEspread>
+				<eSigmaX type="param">94.86832980505137</eSigmaX>
+				<eSigmaZ type="param">4.47213595499958</eSigmaZ>
+				<eEpsilonX type="param">1.0</eEpsilonX>
+				<eEpsilonZ type="param">0.01</eEpsilonZ>
+				<betaX type="param">9.0</betaX>
+				<betaZ type="param">2.0000000000000004</betaZ>
+				<xPrimeMax type="param">0.4</xPrimeMax>
+				<zPrimeMax type="param">0.07</zPrimeMax>
+				<distE type="param">eV</distE>
+				<eMin type="param">7102.0</eMin>
+				<eMax type="param">7122.0</eMax>
+				<K type="param">12.81</K>
+				<period type="param">120</period>
+				<n type="param">1</n>
+				<R0 type="param">None</R0>
+				<filamentBeam type="param">False</filamentBeam>
+				<uniformRayDensity type="param">False</uniformRayDensity>
+			</properties>
+			<_object type="param">xrt.backends.raycing.sources.synchr.Wiggler</_object>
+			<shine type="prop">
+				<parameters type="prop">
+					<toGlobal type="param">True</toGlobal>
+					<withAmplitudes type="param">True</withAmplitudes>
+					<fixedEnergy type="param">False</fixedEnergy>
+					<accuBeam type="param">None</accuBeam>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.sources.synchr.Wiggler.shine</_object>
+				<output type="prop">
+					<beamGlobal type="param">TPW_global</beamGlobal>
+				</output>
+			</shine>
+		</TPW>
+		<FE_MASK type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">FE_MASK</name>
+				<center type="param">[0.0, 12385.0, 0.0]</center>
+				<blades type="param">{'left': -4.2, 'right': 3.8, 'bottom': -0.55, 'top': 0.55}</blades>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<alarmLevel type="param">None</alarmLevel>
+				<renderStyle type="param">mask</renderStyle>
+			</properties>
+			<_object type="param">xrt.backends.raycing.apertures.RectangularAperture</_object>
+			<propagate type="prop">
+				<parameters type="prop">
+					<beam type="param">TPW_global</beam>
+					<needNewGlobal type="param">False</needNewGlobal>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.apertures.RectangularAperture.propagate</_object>
+				<output type="prop">
+					<beamLocal type="param">FE_MASK_local</beamLocal>
+				</output>
+			</propagate>
+		</FE_MASK>
+		<M1_VCM type="value">
+			<properties type="prop">
+				<f1 type="param">None</f1>
+				<f2 type="param">None</f2>
+				<p type="param">13000</p>
+				<q type="param">None</q>
+				<parabolaAxis type="param">None</parabolaAxis>
+				<isCylindrical type="param">False</isCylindrical>
+				<isClosed type="param">False</isClosed>
+				<bl type="param">BMM</bl>
+				<name type="param">M1_VCM</name>
+				<center type="param">[0.0, 13000.0, 0.0]</center>
+				<pitch type="param">0.0035</pitch>
+				<roll type="param">0</roll>
+				<yaw type="param">0</yaw>
+				<positionRoll type="param">0</positionRoll>
+				<rotationSequence type="param">RzRyRx</rotationSequence>
+				<extraPitch type="param">0</extraPitch>
+				<extraRoll type="param">0</extraRoll>
+				<extraYaw type="param">0</extraYaw>
+				<extraRotationSequence type="param">RzRyRx</extraRotationSequence>
+				<alarmLevel type="param">None</alarmLevel>
+				<surface type="param">None</surface>
+				<material type="param">rhpt01</material>
+				<figureError type="param">FE_M1</figureError>
+				<alpha type="param">None</alpha>
+				<limPhysX type="param">[-15.0, 15.0]</limPhysX>
+				<limOptX type="param">None</limOptX>
+				<limPhysY type="param">[-550.0, 550.0]</limPhysY>
+				<limOptY type="param">None</limOptY>
+				<isParametric type="param">True</isParametric>
+				<shape type="param">rect</shape>
+				<gratingDensity type="param">None</gratingDensity>
+				<order type="param">1</order>
+				<shouldCheckCenter type="param">False</shouldCheckCenter>
+				<targetOpenCL type="param">None</targetOpenCL>
+				<precisionOpenCL type="param">float64</precisionOpenCL>
+			</properties>
+			<_object type="param">xrt.backends.raycing.oes.parametric.ParabolicalMirrorParam</_object>
+			<reflect type="prop">
+				<parameters type="prop">
+					<beam type="param">TPW_global</beam>
+					<needLocal type="param">True</needLocal>
+					<noIntersectionSearch type="param">False</noIntersectionSearch>
+					<returnLocalAbsorbed type="param">None</returnLocalAbsorbed>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.oes.parametric.ParabolicalMirrorParam.reflect</_object>
+				<output type="prop">
+					<beamGlobal type="param">M1_VCM_global</beamGlobal>
+					<beamLocal type="param">M1_VCM_local</beamLocal>
+				</output>
+			</reflect>
+		</M1_VCM>
+		<Diag1 type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">Diag1</name>
+				<center type="param">[0.0, 25077.0, 84.4915]</center>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<compressX type="param">None</compressX>
+				<compressZ type="param">None</compressZ>
+				<limPhysX type="param">[-22.0, 22.0]</limPhysX>
+				<limPhysY type="param">[-3.0, 3.0]</limPhysY>
+				<cLimits type="param">[7102.0, 7122.0]</cLimits>
+				<histShape type="param">[256, 256]</histShape>
+			</properties>
+			<_object type="param">xrt.backends.raycing.screens.Screen</_object>
+			<expose type="prop">
+				<parameters type="prop">
+					<beam type="param">M1_VCM_global</beam>
+					<onlyPositivePath type="param">False</onlyPositivePath>
+					<withHistogram type="param">True</withHistogram>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.screens.Screen.expose</_object>
+				<output type="prop">
+					<beamLocal type="param">Diag1_local</beamLocal>
+				</output>
+			</expose>
+		</Diag1>
+		<DCM_C1 type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">DCM_C1</name>
+				<center type="param">[0.0, 26105.0, 91.70508948725096]</center>
+				<pitch type="param">0.288747096812489</pitch>
+				<roll type="param">0.0</roll>
+				<yaw type="param">0.0</yaw>
+				<positionRoll type="param">0.0</positionRoll>
+				<rotationSequence type="param">RzRyRx</rotationSequence>
+				<extraPitch type="param">0</extraPitch>
+				<extraRoll type="param">0</extraRoll>
+				<extraYaw type="param">0</extraYaw>
+				<extraRotationSequence type="param">RzRyRx</extraRotationSequence>
+				<alarmLevel type="param">None</alarmLevel>
+				<surface type="param">None</surface>
+				<material type="param">Si111</material>
+				<figureError type="param">None</figureError>
+				<alpha type="param">None</alpha>
+				<limPhysX type="param">[-50.0, 50.0]</limPhysX>
+				<limOptX type="param">None</limOptX>
+				<limPhysY type="param">[-50.0, 50.0]</limPhysY>
+				<limOptY type="param">None</limOptY>
+				<isParametric type="param">False</isParametric>
+				<shape type="param">rect</shape>
+				<gratingDensity type="param">None</gratingDensity>
+				<order type="param">1</order>
+				<shouldCheckCenter type="param">False</shouldCheckCenter>
+				<targetOpenCL type="param">None</targetOpenCL>
+				<precisionOpenCL type="param">float64</precisionOpenCL>
+			</properties>
+			<_object type="param">xrt.backends.raycing.oes.base.OE</_object>
+			<reflect type="prop">
+				<parameters type="prop">
+					<beam type="param">M1_VCM_global</beam>
+					<needLocal type="param">True</needLocal>
+					<noIntersectionSearch type="param">False</noIntersectionSearch>
+					<returnLocalAbsorbed type="param">None</returnLocalAbsorbed>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.oes.base.OE.reflect</_object>
+				<output type="prop">
+					<beamGlobal type="param">DCM_C1_global</beamGlobal>
+					<beamLocal type="param">DCM_local1</beamLocal>
+				</output>
+			</reflect>
+		</DCM_C1>
+		<DCM_C2 type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">DCM_C2</name>
+				<center type="param">[-1.83697019872103e-15, 26100.544267679565, 106.70508948725096]</center>
+				<pitch type="param">-0.288747096812489</pitch>
+				<roll type="param">0.0</roll>
+				<yaw type="param">-0.0</yaw>
+				<positionRoll type="param">3.141592653589793</positionRoll>
+				<rotationSequence type="param">RzRyRx</rotationSequence>
+				<extraPitch type="param">0</extraPitch>
+				<extraRoll type="param">0</extraRoll>
+				<extraYaw type="param">0</extraYaw>
+				<extraRotationSequence type="param">RzRyRx</extraRotationSequence>
+				<alarmLevel type="param">None</alarmLevel>
+				<surface type="param">None</surface>
+				<material type="param">Si111</material>
+				<figureError type="param">None</figureError>
+				<alpha type="param">None</alpha>
+				<limPhysX type="param">[-50.0, 50.0]</limPhysX>
+				<limOptX type="param">None</limOptX>
+				<limPhysY type="param">[0.0, 100.0]</limPhysY>
+				<limOptY type="param">None</limOptY>
+				<isParametric type="param">False</isParametric>
+				<shape type="param">rect</shape>
+				<gratingDensity type="param">None</gratingDensity>
+				<order type="param">1</order>
+				<shouldCheckCenter type="param">False</shouldCheckCenter>
+				<targetOpenCL type="param">None</targetOpenCL>
+				<precisionOpenCL type="param">float64</precisionOpenCL>
+			</properties>
+			<_object type="param">xrt.backends.raycing.oes.base.OE</_object>
+			<reflect type="prop">
+				<parameters type="prop">
+					<beam type="param">DCM_C1_global</beam>
+					<needLocal type="param">True</needLocal>
+					<noIntersectionSearch type="param">False</noIntersectionSearch>
+					<returnLocalAbsorbed type="param">None</returnLocalAbsorbed>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.oes.base.OE.reflect</_object>
+				<output type="prop">
+					<beamGlobal type="param">DCM_global</beamGlobal>
+					<beamLocal type="param">DCM_local2</beamLocal>
+				</output>
+			</reflect>
+		</DCM_C2>
+		<PinkBeamStop type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">PinkBeamStop</name>
+				<center type="param">[0.0, 26450.0, 124.07154184030665]</center>
+				<blades type="param">{'left': -25, 'right': 25, 'bottom': -10, 'top': 10}</blades>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<alarmLevel type="param">None</alarmLevel>
+				<renderStyle type="param">mask</renderStyle>
+			</properties>
+			<_object type="param">xrt.backends.raycing.apertures.RectangularAperture</_object>
+			<propagate type="prop">
+				<parameters type="prop">
+					<beam type="param">DCM_global</beam>
+					<needNewGlobal type="param">False</needNewGlobal>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.apertures.RectangularAperture.propagate</_object>
+				<output type="prop">
+					<beamLocal type="param">PinkBeamStop_local</beamLocal>
+				</output>
+			</propagate>
+		</PinkBeamStop>
+		<DM2_Slits type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">DM2_Slits</name>
+				<center type="param">[0.0, 26950.0, 127.6515]</center>
+				<blades type="param">{'left': -9, 'right': 9, 'bottom': -0.65, 'top': 0.65}</blades>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<alarmLevel type="param">None</alarmLevel>
+				<renderStyle type="param">mask</renderStyle>
+			</properties>
+			<_object type="param">xrt.backends.raycing.apertures.RectangularAperture</_object>
+			<propagate type="prop">
+				<parameters type="prop">
+					<beam type="param">DCM_global</beam>
+					<needNewGlobal type="param">False</needNewGlobal>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.apertures.RectangularAperture.propagate</_object>
+				<output type="prop">
+					<beamLocal type="param">DM2_Slits_local</beamLocal>
+				</output>
+			</propagate>
+		</DM2_Slits>
+		<Diag2 type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">Diag2</name>
+				<center type="param">[0.0, 27050.0, 128.3506]</center>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<compressX type="param">None</compressX>
+				<compressZ type="param">None</compressZ>
+				<limPhysX type="param">[-12.0, 12.0]</limPhysX>
+				<limPhysY type="param">[-2.0, 2.0]</limPhysY>
+				<cLimits type="param">[7102.0, 7122.0]</cLimits>
+				<histShape type="param">[256, 256]</histShape>
+			</properties>
+			<_object type="param">xrt.backends.raycing.screens.Screen</_object>
+			<expose type="prop">
+				<parameters type="prop">
+					<beam type="param">DCM_global</beam>
+					<onlyPositivePath type="param">False</onlyPositivePath>
+					<withHistogram type="param">True</withHistogram>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.screens.Screen.expose</_object>
+				<output type="prop">
+					<beamLocal type="param">Diag2_local</beamLocal>
+				</output>
+			</expose>
+		</Diag2>
+		<M2_TFM type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">M2_TFM</name>
+				<center type="param">[0.0, 28473.0, 138.25440282538193]</center>
+				<pitch type="param">-0.0035</pitch>
+				<roll type="param">0</roll>
+				<yaw type="param">0</yaw>
+				<positionRoll type="param">3.141592653589793</positionRoll>
+				<extraPitch type="param">0</extraPitch>
+				<extraRoll type="param">0</extraRoll>
+				<extraYaw type="param">0</extraYaw>
+				<rotationSequence type="param">RzRyRx</rotationSequence>
+				<extraRotationSequence type="param">RzRyRx</extraRotationSequence>
+				<surface type="param">None</surface>
+				<material type="param">rhpt01</material>
+				<alpha type="param">None</alpha>
+				<limPhysX type="param">[-15.0, 15.0]</limPhysX>
+				<limOptX type="param">None</limOptX>
+				<limPhysY type="param">[-550.0, 550.0]</limPhysY>
+				<limOptY type="param">None</limOptY>
+				<isParametric type="param">False</isParametric>
+				<shape type="param">rect</shape>
+				<gratingDensity type="param">None</gratingDensity>
+				<order type="param">1</order>
+				<shouldCheckCenter type="param">False</shouldCheckCenter>
+				<R type="param">6758285.7</R>
+				<r type="param">82.789</r>
+				<alarmLevel type="param">None</alarmLevel>
+				<targetOpenCL type="param">None</targetOpenCL>
+				<precisionOpenCL type="param">float64</precisionOpenCL>
+				<figureError type="param">FE_M2</figureError>
+			</properties>
+			<_object type="param">xrt.backends.raycing.oes.ToroidMirror</_object>
+			<reflect type="prop">
+				<parameters type="prop">
+					<beam type="param">DCM_global</beam>
+					<needLocal type="param">True</needLocal>
+					<noIntersectionSearch type="param">False</noIntersectionSearch>
+					<returnLocalAbsorbed type="param">None</returnLocalAbsorbed>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.oes.ToroidMirror.reflect</_object>
+				<output type="prop">
+					<beamGlobal type="param">M2_TFM_global</beamGlobal>
+					<beamLocal type="param">M2_TFM_local</beamLocal>
+				</output>
+			</reflect>
+		</M2_TFM>
+		<M3_HRM type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">M3_HRM</name>
+				<center type="param">[0.0, 30381.0, 137.8147686567006]</center>
+				<pitch type="param">0.0035</pitch>
+				<roll type="param">0</roll>
+				<yaw type="param">0</yaw>
+				<positionRoll type="param">3.141592653589793</positionRoll>
+				<extraPitch type="param">0</extraPitch>
+				<extraRoll type="param">0</extraRoll>
+				<extraYaw type="param">0</extraYaw>
+				<rotationSequence type="param">RzRyRx</rotationSequence>
+				<extraRotationSequence type="param">RzRyRx</extraRotationSequence>
+				<surface type="param">None</surface>
+				<material type="param">si01</material>
+				<alpha type="param">None</alpha>
+				<limPhysX type="param">[-15.0, 15.0]</limPhysX>
+				<limOptX type="param">None</limOptX>
+				<limPhysY type="param">[-550.0, 550.0]</limPhysY>
+				<limOptY type="param">None</limOptY>
+				<isParametric type="param">False</isParametric>
+				<shape type="param">rect</shape>
+				<gratingDensity type="param">None</gratingDensity>
+				<order type="param">1</order>
+				<shouldCheckCenter type="param">False</shouldCheckCenter>
+				<alarmLevel type="param">None</alarmLevel>
+				<targetOpenCL type="param">None</targetOpenCL>
+				<precisionOpenCL type="param">float64</precisionOpenCL>
+				<figureError type="param">None</figureError>
+			</properties>
+			<_object type="param">xrt.backends.raycing.oes.base.OE</_object>
+			<reflect type="prop">
+				<parameters type="prop">
+					<beam type="param">M2_TFM_global</beam>
+					<needLocal type="param">True</needLocal>
+					<noIntersectionSearch type="param">False</noIntersectionSearch>
+					<returnLocalAbsorbed type="param">None</returnLocalAbsorbed>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.oes.base.OE.reflect</_object>
+				<output type="prop">
+					<beamGlobal type="param">M3_HRM_global</beamGlobal>
+					<beamLocal type="param">M3_HRM_local</beamLocal>
+				</output>
+			</reflect>
+		</M3_HRM>
+		<NANO_BPM type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">NANO_BPM</name>
+				<center type="param">[0.0, 31122.0, 132.2156]</center>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<compressX type="param">None</compressX>
+				<compressZ type="param">None</compressZ>
+				<limPhysX type="param">[-12.0, 12.0]</limPhysX>
+				<limPhysY type="param">[-2.0, 2.0]</limPhysY>
+				<cLimits type="param">[7102.0, 7122.0]</cLimits>
+				<histShape type="param">[256, 256]</histShape>
+			</properties>
+			<_object type="param">xrt.backends.raycing.screens.Screen</_object>
+			<expose type="prop">
+				<parameters type="prop">
+					<beam type="param">M3_HRM_global</beam>
+					<onlyPositivePath type="param">False</onlyPositivePath>
+					<withHistogram type="param">True</withHistogram>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.screens.Screen.expose</_object>
+				<output type="prop">
+					<beamLocal type="param">NANO_BPM_local</beamLocal>
+				</output>
+			</expose>
+		</NANO_BPM>
+		<BeamShutter type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">BeamShutter</name>
+				<center type="param">[0.0, 31555.0, 129.1703]</center>
+				<blades type="param">{'left': -10, 'right': 10, 'bottom': -3, 'top': 3}</blades>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<alarmLevel type="param">None</alarmLevel>
+				<renderStyle type="param">mask</renderStyle>
+			</properties>
+			<_object type="param">xrt.backends.raycing.apertures.RectangularAperture</_object>
+			<propagate type="prop">
+				<parameters type="prop">
+					<beam type="param">M3_HRM_global</beam>
+					<needNewGlobal type="param">False</needNewGlobal>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.apertures.RectangularAperture.propagate</_object>
+				<output type="prop">
+					<beamLocal type="param">BeamShutter_local</beamLocal>
+				</output>
+			</propagate>
+		</BeamShutter>
+		<DM3_Slits type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">DM3_Slits</name>
+				<center type="param">[0.0, 39500.0, 73.2937]</center>
+				<blades type="param">{'left': -4.0, 'right': 4.0, 'bottom': -0.5, 'top': 0.5}</blades>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<alarmLevel type="param">None</alarmLevel>
+				<renderStyle type="param">mask</renderStyle>
+			</properties>
+			<_object type="param">xrt.backends.raycing.apertures.RectangularAperture</_object>
+			<propagate type="prop">
+				<parameters type="prop">
+					<beam type="param">M3_HRM_global</beam>
+					<needNewGlobal type="param">False</needNewGlobal>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.apertures.RectangularAperture.propagate</_object>
+				<output type="prop">
+					<beamLocal type="param">DM3_Slits_local</beamLocal>
+				</output>
+			</propagate>
+		</DM3_Slits>
+		<XAS_SAMPLE type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">XAS_SAMPLE</name>
+				<center type="param">[0.0, 40300.0, 67.6674]</center>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<compressX type="param">None</compressX>
+				<compressZ type="param">None</compressZ>
+				<limPhysX type="param">[-10.0, 10.0]</limPhysX>
+				<limPhysY type="param">[-7.4725, 7.4725]</limPhysY>
+				<cLimits type="param">[7102.0, 7122.0]</cLimits>
+				<histShape type="param">[1456, 1088]</histShape>
+			</properties>
+			<_object type="param">xrt.backends.raycing.screens.Screen</_object>
+			<expose type="prop">
+				<parameters type="prop">
+					<beam type="param">M3_HRM_global</beam>
+					<onlyPositivePath type="param">False</onlyPositivePath>
+					<withHistogram type="param">True</withHistogram>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.screens.Screen.expose</_object>
+				<output type="prop">
+					<beamLocal type="param">XAS_SAMPLE_local</beamLocal>
+				</output>
+			</expose>
+		</XAS_SAMPLE>
+		<XRD_SAMPLE type="value">
+			<properties type="prop">
+				<bl type="param">BMM</bl>
+				<name type="param">XRD_SAMPLE</name>
+				<center type="param">[0.0, 44509.0, 38.0658]</center>
+				<x type="param">[1.0, -0.0, 0.0]</x>
+				<z type="param">[0.0, 0.0, 1.0]</z>
+				<compressX type="param">None</compressX>
+				<compressZ type="param">None</compressZ>
+				<limPhysX type="param">[-6.0, 6.0]</limPhysX>
+				<limPhysY type="param">[-2.0, 2.0]</limPhysY>
+				<cLimits type="param">[7102.0, 7122.0]</cLimits>
+				<histShape type="param">[256, 256]</histShape>
+			</properties>
+			<_object type="param">xrt.backends.raycing.screens.Screen</_object>
+			<expose type="prop">
+				<parameters type="prop">
+					<beam type="param">M3_HRM_global</beam>
+					<onlyPositivePath type="param">False</onlyPositivePath>
+					<withHistogram type="param">True</withHistogram>
+				</parameters>
+				<_object type="param">xrt.backends.raycing.screens.Screen.expose</_object>
+				<output type="prop">
+					<beamLocal type="param">XRD_SAMPLE_local</beamLocal>
+				</output>
+			</expose>
+		</XRD_SAMPLE>
+	</BMM>
+	<FigureErrors type="prop">
+		<FE_M1 type="value">
+			<properties type="prop">
+				<name type="param">FE_M1</name>
+				<rms type="param">4.5</rms>
+				<rmsKind type="param">slope</rmsKind>
+				<corrLength type="param">100.0</corrLength>
+				<seed type="param">11</seed>
+				<limPhysX type="param">[-15.0, 15.0]</limPhysX>
+				<limPhysY type="param">[-550.0, 550.0]</limPhysY>
+				<gridStep type="param">1.0</gridStep>
+			</properties>
+			<_object type="param">xrt.backends.raycing.figure_error.RandomRoughness</_object>
+		</FE_M1>
+		<FE_M2 type="value">
+			<properties type="prop">
+				<name type="param">FE_M2</name>
+				<rms type="param">4.5</rms>
+				<rmsKind type="param">slope</rmsKind>
+				<corrLength type="param">100.0</corrLength>
+				<seed type="param">22</seed>
+				<limPhysX type="param">[-15.0, 15.0]</limPhysX>
+				<limPhysY type="param">[-550.0, 550.0]</limPhysY>
+				<gridStep type="param">1.0</gridStep>
+			</properties>
+			<_object type="param">xrt.backends.raycing.figure_error.RandomRoughness</_object>
+		</FE_M2>
+	</FigureErrors>
+	<plots type="value">
+		<plot01 type="prop">
+			<beam type="param">Diag1_local</beam>
+			<rayFlag type="param">(1,)</rayFlag>
+			<xaxis type="prop">
+				<label type="param">x</label>
+				<unit type="param">mm</unit>
+				<factor type="param">None</factor>
+				<data type="param">auto</data>
+				<limits type="param">-25, 25</limits>
+				<offset type="param">0</offset>
+				<bins type="param">128</bins>
+				<ppb type="param">2</ppb>
+				<density type="param">histogram</density>
+				<invertAxis type="param">False</invertAxis>
+				<outline type="param">0.5</outline>
+				<fwhmFormatStr type="param">%.1f</fwhmFormatStr>
+				<_object type="param">xrt.plotter.XYCAxis</_object>
+			</xaxis>
+			<yaxis type="prop">
+				<label type="param">z</label>
+				<unit type="param">mm</unit>
+				<factor type="param">None</factor>
+				<data type="param">auto</data>
+				<limits type="param">-5, 5</limits>
+				<offset type="param">0</offset>
+				<bins type="param">128</bins>
+				<ppb type="param">2</ppb>
+				<density type="param">histogram</density>
+				<invertAxis type="param">False</invertAxis>
+				<outline type="param">0.5</outline>
+				<fwhmFormatStr type="param">%.1f</fwhmFormatStr>
+				<_object type="param">xrt.plotter.XYCAxis</_object>
+			</yaxis>
+			<caxis type="prop">
+				<label type="param">energy</label>
+				<unit type="param">eV</unit>
+				<factor type="param">None</factor>
+				<data type="param">auto</data>
+				<limits type="param">None</limits>
+				<offset type="param">0</offset>
+				<bins type="param">128</bins>
+				<ppb type="param">2</ppb>
+				<density type="param">histogram</density>
+				<invertAxis type="param">False</invertAxis>
+				<outline type="param">0.5</outline>
+				<fwhmFormatStr type="param">%.1f</fwhmFormatStr>
+				<_object type="param">xrt.plotter.XYCAxis</_object>
+			</caxis>
+			<aspect type="param">equal</aspect>
+			<xPos type="param">1</xPos>
+			<yPos type="param">1</yPos>
+			<ePos type="param">1</ePos>
+			<title type="param">01 - Diag 1</title>
+			<invertColorMap type="param">False</invertColorMap>
+			<negative type="param">False</negative>
+			<fluxKind type="param">total</fluxKind>
+			<fluxUnit type="param">auto</fluxUnit>
+			<fluxFormatStr type="param">auto</fluxFormatStr>
+			<contourLevels type="param">None</contourLevels>
+			<contourColors type="param">None</contourColors>
+			<contourFmt type="param">%.1f</contourFmt>
+			<contourFactor type="param">1.0</contourFactor>
+			<saveName type="param">None</saveName>
+			<persistentName type="param">None</persistentName>
+			<oe type="param">None</oe>
+			<raycingParam type="param">0</raycingParam>
+			<beamState type="param">None</beamState>
+			<beamC type="param">None</beamC>
+			<beamAbsorb type="param">None</beamAbsorb>
+			<showAbsorbed type="param">False</showAbsorbed>
+			<useQtWidget type="param">False</useQtWidget>
+			<_object type="param">xrt.plotter.XYCPlot</_object>
+		</plot01>
+		<plot02 type="prop">
+			<beam type="param">Diag2_local</beam>
+			<rayFlag type="param">(1,)</rayFlag>
+			<xaxis type="prop">
+				<label type="param">x</label>
+				<unit type="param">mm</unit>
+				<factor type="param">None</factor>
+				<data type="param">auto</data>
+				<limits type="param">-10, 10</limits>
+				<offset type="param">0</offset>
+				<bins type="param">128</bins>
+				<ppb type="param">2</ppb>
+				<density type="param">histogram</density>
+				<invertAxis type="param">False</invertAxis>
+				<outline type="param">0.5</outline>
+				<fwhmFormatStr type="param">%.1f</fwhmFormatStr>
+				<_object type="param">xrt.plotter.XYCAxis</_object>
+			</xaxis>
+			<yaxis type="prop">
+				<label type="param">z</label>
+				<unit type="param">mm</unit>
+				<factor type="param">None</factor>
+				<data type="param">auto</data>
+				<limits type="param">-10, 10</limits>
+				<offset type="param">0</offset>
+				<bins type="param">128</bins>
+				<ppb type="param">2</ppb>
+				<density type="param">histogram</density>
+				<invertAxis type="param">False</invertAxis>
+				<outline type="param">0.5</outline>
+				<fwhmFormatStr type="param">%.1f</fwhmFormatStr>
+				<_object type="param">xrt.plotter.XYCAxis</_object>
+			</yaxis>
+			<caxis type="prop">
+				<label type="param">energy</label>
+				<unit type="param">eV</unit>
+				<factor type="param">None</factor>
+				<data type="param">auto</data>
+				<limits type="param">None</limits>
+				<offset type="param">0</offset>
+				<bins type="param">128</bins>
+				<ppb type="param">2</ppb>
+				<density type="param">histogram</density>
+				<invertAxis type="param">False</invertAxis>
+				<outline type="param">0.5</outline>
+				<fwhmFormatStr type="param">%.1f</fwhmFormatStr>
+				<_object type="param">xrt.plotter.XYCAxis</_object>
+			</caxis>
+			<aspect type="param">equal</aspect>
+			<xPos type="param">1</xPos>
+			<yPos type="param">1</yPos>
+			<ePos type="param">1</ePos>
+			<title type="param">02 - Diag2</title>
+			<invertColorMap type="param">False</invertColorMap>
+			<negative type="param">False</negative>
+			<fluxKind type="param">total</fluxKind>
+			<fluxUnit type="param">auto</fluxUnit>
+			<fluxFormatStr type="param">auto</fluxFormatStr>
+			<contourLevels type="param">None</contourLevels>
+			<contourColors type="param">None</contourColors>
+			<contourFmt type="param">%.1f</contourFmt>
+			<contourFactor type="param">1.0</contourFactor>
+			<saveName type="param">None</saveName>
+			<persistentName type="param">None</persistentName>
+			<oe type="param">None</oe>
+			<raycingParam type="param">0</raycingParam>
+			<beamState type="param">None</beamState>
+			<beamC type="param">None</beamC>
+			<beamAbsorb type="param">None</beamAbsorb>
+			<showAbsorbed type="param">False</showAbsorbed>
+			<useQtWidget type="param">False</useQtWidget>
+			<_object type="param">xrt.plotter.XYCPlot</_object>
+		</plot02>
+		<plot03 type="prop">
+			<beam type="param">XAS_SAMPLE_local</beam>
+			<rayFlag type="param">(1,)</rayFlag>
+			<xaxis type="prop">
+				<label type="param">x</label>
+				<unit type="param">mm</unit>
+				<factor type="param">None</factor>
+				<data type="param">auto</data>
+				<limits type="param">-10, 10</limits>
+				<offset type="param">0</offset>
+				<bins type="param">728</bins>
+				<ppb type="param">1</ppb>
+				<density type="param">histogram</density>
+				<invertAxis type="param">False</invertAxis>
+				<outline type="param">0.5</outline>
+				<fwhmFormatStr type="param">%.1f</fwhmFormatStr>
+				<_object type="param">xrt.plotter.XYCAxis</_object>
+			</xaxis>
+			<yaxis type="prop">
+				<label type="param">z</label>
+				<unit type="param">mm</unit>
+				<factor type="param">None</factor>
+				<data type="param">auto</data>
+				<limits type="param">-7.4725, 7.4725</limits>
+				<offset type="param">0</offset>
+				<bins type="param">544</bins>
+				<ppb type="param">1</ppb>
+				<density type="param">histogram</density>
+				<invertAxis type="param">False</invertAxis>
+				<outline type="param">0.5</outline>
+				<fwhmFormatStr type="param">%.1f</fwhmFormatStr>
+				<_object type="param">xrt.plotter.XYCAxis</_object>
+			</yaxis>
+			<caxis type="prop">
+				<label type="param">energy</label>
+				<unit type="param">eV</unit>
+				<factor type="param">None</factor>
+				<data type="param">auto</data>
+				<limits type="param">None</limits>
+				<offset type="param">0</offset>
+				<bins type="param">544</bins>
+				<ppb type="param">1</ppb>
+				<density type="param">histogram</density>
+				<invertAxis type="param">False</invertAxis>
+				<outline type="param">0.5</outline>
+				<fwhmFormatStr type="param">%.1f</fwhmFormatStr>
+				<_object type="param">xrt.plotter.XYCAxis</_object>
+			</caxis>
+			<aspect type="param">equal</aspect>
+			<xPos type="param">1</xPos>
+			<yPos type="param">1</yPos>
+			<ePos type="param">1</ePos>
+			<title type="param">03 - XAS Sample screen</title>
+			<invertColorMap type="param">False</invertColorMap>
+			<negative type="param">False</negative>
+			<fluxKind type="param">total</fluxKind>
+			<fluxUnit type="param">auto</fluxUnit>
+			<fluxFormatStr type="param">auto</fluxFormatStr>
+			<contourLevels type="param">None</contourLevels>
+			<contourColors type="param">None</contourColors>
+			<contourFmt type="param">%.1f</contourFmt>
+			<contourFactor type="param">1.0</contourFactor>
+			<saveName type="param">None</saveName>
+			<persistentName type="param">None</persistentName>
+			<oe type="param">None</oe>
+			<raycingParam type="param">0</raycingParam>
+			<beamState type="param">None</beamState>
+			<beamC type="param">None</beamC>
+			<beamAbsorb type="param">None</beamAbsorb>
+			<showAbsorbed type="param">False</showAbsorbed>
+			<useQtWidget type="param">False</useQtWidget>
+			<_object type="param">xrt.plotter.XYCPlot</_object>
+		</plot03>
+	</plots>
+	<run_ray_tracing type="prop">
+		<plots type="param">plots</plots>
+		<repeats type="param">1</repeats>
+		<updateEvery type="param">1</updateEvery>
+		<pickleEvery type="param">None</pickleEvery>
+		<energyRange type="param">None</energyRange>
+		<backend type="param">raycing</backend>
+		<beamLine type="param">BMM</beamLine>
+		<threads type="param">1</threads>
+		<processes type="param">1</processes>
+		<generator type="param">None</generator>
+		<generatorArgs type="param">[]</generatorArgs>
+		<generatorKWargs type="param">auto</generatorKWargs>
+		<globalNorm type="param">0</globalNorm>
+		<afterScript type="param">None</afterScript>
+		<afterScriptArgs type="param">[]</afterScriptArgs>
+		<afterScriptKWargs type="param">{}</afterScriptKWargs>
+		<_object type="param">xrt.runner.run_ray_tracing</_object>
+	</run_ray_tracing>
+	<description>NSLS-II BMM (6-BM) beamline model, improved from bmm_final.xml.
+
+STARTUP CONFIGURATION: documented photon delivery mode C
+(focused at the XAS sample, 6 to 8 keV, both mirrors in the beam,
+M3 on the bare-Si stripe), tuned at the Fe K edge, 7112 eV.
+Per the manual mode table: A focused above 8 keV (M2 only); B focused below
+6 keV (unavailable at the real beamline); C focused 6 to 8 keV; D unfocused
+above 8 keV (M3 only, Rh/Pt); E unfocused 6 to 8 keV; F unfocused below
+6 keV; XRD focused at the goniometer above 8 keV. At high energy only ONE of
+M2/M3 is in the beam; at low energy the HRM or both. Mode C is the natural
+startup here because both mirrors are in the flow: rays that fly over a
+retracted optic carry state=3 and are invisible to screens until the next
+optic re-intersects them, so a mode with the LAST mirror (M3) retracted
+(A, XRD) cannot produce sample-camera images unless M3 is removed from the
+flow. Mode changes (a change_mode analogue) move: M2 center z (+50 mm = out),
+M2 R (bender), M3 center z / pitch (sign flips to -0.0035 when leveling the
+rising 7 mrad beam in D/E/F), M3 material (rhpt01 vs si01 stripe), DCM bragg
+and cryst2perpTransl, and the downstream shutter/slit/screen heights.
+Per-mode angles CONFIRMED from the beamline lookup table Modes.xlsx
+(mirrors sheet): mode A: M2 3.5 mrad, M3 parked out of beam (jacks -1.5
+uniform); mode B: M3 5.0 mrad, Si; mode C: M2 3.5 mrad AND M3 3.5 mrad, Si
+stripe (m3 lateral -8); mode D: M3 3.5 mrad, Rh/Pt (lateral +8); mode E:
+M3 3.5 mrad, Si; mode F: M3 5.0 mrad, Si; XRD: M2 only. M2 retracts in
+D/E/F by moving all three jacks to +6 mm (upward). M2 bender: 216900 steps
+in all XAS-focus modes vs 107240 for XRD focus (constrains the XRD-mode R).
+M2 to M3 = 1908 mm (Modes.xlsx, matches this model exactly).
+
+Sources for parameter values:
+- BMM beamline manual, https://nsls2.github.io/bmm-beamline-manual/ (layout, mirror
+  coatings Rh 5 nm on Pt 30 nm, M1 paraboloid at 13 m, DM2 slits typical 18 x 1.3 mm,
+  M3 stripes: bare Si below 8 keV, Rh/Pt above; pitch 3.5 mrad)
+- Musardo et al., NIM-A 1059 (2024) 169008 (3PW: B peak 1.1427 T, Ec 6.8 keV)
+- NSLS2/bmm-profile-collection geometry constants (DCM offset 30 mm, M2 to M3
+  distance 1905 mm, M2 pitch 3.5 mrad, XAFS table 11.5 to 12.7 m from M2)
+- Modes.xlsx (beamline lookup table, provided by staff): front-end slits
+  FE_MASK blades outboard +3.8 / inboard -4.2 / top +0.55 / bottom -0.55
+  (8.0 x 1.1 mm); DM3 end-station slits +-4.0 x +-0.5 mm (added as DM3_Slits;
+  its longitudinal position within DM3, y=39500 = M3+9119, is approximate);
+  per-mode mirror angles and jack/bender positions as listed above; DCM
+  calibration: Si(111) d = 3.1356369 A, bragg offset 16.054 deg (xrt uses its
+  own Si d-spacing 3.135458 A, a 6e-5 relative difference, about 0.4 eV at
+  the Fe K edge - relevant only for absolute energy calibration).
+Tuned (not documented): M2 sagittal radius r = 82.789 mm and meridional
+R = 6.758e6 mm chosen to place both foci at the XAS sample with pitch 3.5 mrad;
+mirror slope errors (FE_M1, FE_M2, rms=4.5, i.e. about 6 urad tangential each)
+fitted to the documented focused spot of about 300 x 250 um FWHM - this is an
+EFFECTIVE value lumping polish error with vibration/thermal blur; real
+metrology would likely show below 2 urad with the remainder from other
+sources.
+
+This model contains NO automatic adjustments: all angles and translations are
+static motor-like values. Acquisition logic must coordinate them itself.
+DCM motor formulas (Si 111, d = 3.135458 A, hc = 12398.42 eV A):
+  bragg = arcsin(hc / (2 d E)) - dtheta_refraction(E) + 0.00700 rad
+          (the 0.00700 rad term is the upward beam inclination after M1)
+  cryst2perpTransl = 30 / (2 cos(bragg)) mm   (maintains the 30 mm fixed exit)
+  cryst2longTransl : free motor; footprint walks along crystal 2 with angle.
+The source samples photon energies only within eMin..eMax; widen or slide this
+band (simulation-side, not hardware) to cover any energy scan.
+Vertical geometry: beam rises at 7.000 mrad after M1, DCM adds +30 mm offset,
+M2 (bounce-down 3.5 mrad) levels the beam, M3 (bounce-down 3.5 mrad) sends it
+down at 7.0 mrad to the XAS and XRD sample positions.
+Screens expose with withHistogram=True: after each trace, every screen holds a
+flux-weighted image (attribute .image) on its limPhysX/limPhysY/histShape grid;
+post-process with bmm_camera_view.py (PSF, exposure, 8-bit) to emulate cameras.</description>
+</Project>
