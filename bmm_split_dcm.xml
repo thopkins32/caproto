@@ -159,8 +159,8 @@
 				<eEpsilonZ type="param">0.01</eEpsilonZ>
 				<betaX type="param">9.0</betaX>
 				<betaZ type="param">2.0000000000000004</betaZ>
-				<xPrimeMax type="param">0.4</xPrimeMax>
-				<zPrimeMax type="param">0.07</zPrimeMax>
+				<xPrimeMax type="param">0.37</xPrimeMax>
+				<zPrimeMax type="param">0.047</zPrimeMax>
 				<distE type="param">eV</distE>
 				<eMin type="param">7111.5</eMin>
 				<eMax type="param">7112.5</eMax>
