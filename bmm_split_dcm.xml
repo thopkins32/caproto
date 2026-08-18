@@ -162,8 +162,8 @@
 				<xPrimeMax type="param">0.4</xPrimeMax>
 				<zPrimeMax type="param">0.07</zPrimeMax>
 				<distE type="param">eV</distE>
-				<eMin type="param">7102.0</eMin>
-				<eMax type="param">7122.0</eMax>
+				<eMin type="param">7111.5</eMin>
+				<eMax type="param">7112.5</eMax>
 				<K type="param">12.81</K>
 				<period type="param">120</period>
 				<n type="param">1</n>
